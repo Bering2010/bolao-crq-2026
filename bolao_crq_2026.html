@@ -200,10 +200,12 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padd
   </div>
 </div>
 <div class="toast-container" id="toast-container"></div>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
+<script>
+// Firebase compat SDK
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
 // ── FIREBASE CONFIG ──
 const firebaseConfig = {
   apiKey: "AIzaSyDKFfrS-SVBhQUBbJr0QrYCoLNEG7MTTyA",
@@ -213,24 +215,24 @@ const firebaseConfig = {
   messagingSenderId: "363674646815",
   appId: "1:363674646815:web:eab23d2f79e66ffee4182a"
 };
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
 const PTS={EXATO:50,VENC_GOL:40,RESULTADO:30,GOL_UM:10,PP:20,CAMP:300,VICE:200,TER:100,QUA:50};
 let participants=[],results={};
 const SK_P='bolao_crq_2026_participants',SK_R='bolao_crq_2026_results';
 async function save(){
   try{
-    await setDoc(doc(db,'bolao','participants'),{data: JSON.stringify(participants)});
-    await setDoc(doc(db,'bolao','results'),{data: JSON.stringify(results)});
+    await db.collection('bolao').doc('participants').set({data: JSON.stringify(participants)});
+    await db.collection('bolao').doc('results').set({data: JSON.stringify(results)});
   }catch(e){console.error('Erro ao salvar:',e);}
 }
 async function loadState(){
   try{
-    const pSnap=await getDoc(doc(db,'bolao','participants'));
-    if(pSnap.exists()) participants=JSON.parse(pSnap.data().data||'[]');
-    const rSnap=await getDoc(doc(db,'bolao','results'));
-    if(rSnap.exists()) results=JSON.parse(rSnap.data().data||'{}');
+    const pSnap=await db.collection('bolao').doc('participants').get();
+    if(pSnap.exists) participants=JSON.parse(pSnap.data().data||'[]');
+    const rSnap=await db.collection('bolao').doc('results').get();
+    if(rSnap.exists) results=JSON.parse(rSnap.data().data||'{}');
   }catch(e){console.error('Erro ao carregar:',e);}
 }
 function initials(nome){const p=nome.trim().split(' ').filter(Boolean);return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():p[0]?.[0]?.toUpperCase()||'?';}
@@ -254,10 +256,9 @@ document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.targe
 async function init(){initParticles();await loadState();renderParticipants();renderRanking();}
 init().then(()=>{
   // Escuta mudanças em tempo real
-  onSnapshot(doc(db,'bolao','participants'), snap=>{
-    if(snap.exists()){
+  db.collection('bolao').doc('participants').onSnapshot(snap=>{
+    if(snap.exists){
       const fresh=JSON.parse(snap.data().data||'[]');
-      // Só atualiza se diferente do que temos
       if(JSON.stringify(fresh)!==JSON.stringify(participants)){
         participants=fresh;
         renderParticipants();
@@ -265,8 +266,8 @@ init().then(()=>{
       }
     }
   });
-  onSnapshot(doc(db,'bolao','results'), snap=>{
-    if(snap.exists()){
+  db.collection('bolao').doc('results').onSnapshot(snap=>{
+    if(snap.exists){
       const fresh=JSON.parse(snap.data().data||'{}');
       if(JSON.stringify(fresh)!==JSON.stringify(results)){
         results=fresh;
