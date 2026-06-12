@@ -166,7 +166,22 @@
 
 <div class="toast-box" id="toast-box"></div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ── FIREBASE CONFIG ──
+const firebaseConfig = {
+  apiKey: "AIzaSyDKFfrS-SVBhQUBbJr0QrYCoLNEG7MTTyA",
+  authDomain: "bolao-crq-2026.firebaseapp.com",
+  projectId: "bolao-crq-2026",
+  storageBucket: "bolao-crq-2026.firebasestorage.app",
+  messagingSenderId: "363674646815",
+  appId: "1:363674646815:web:eab23d2f79e66ffee4182a"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const PWD = 'Ber194032*';
 
 function doLogin(){
@@ -278,12 +293,21 @@ const MM_JOGOS = {
 };
 
 let results = {};
+let participants = [];
 
 async function loadResults(){
-  try{ const r=localStorage.getItem(STORAGE_KEY); if(r) results=JSON.parse(r); }catch(e){}
+  try{
+    const snap=await getDoc(doc(db,'bolao','results'));
+    if(snap.exists()) results=JSON.parse(snap.data().data||'{}');
+    const pSnap=await getDoc(doc(db,'bolao','participants'));
+    if(pSnap.exists()) participants=JSON.parse(pSnap.data().data||'[]');
+  }catch(e){ console.error('Erro ao carregar:',e); }
 }
 async function saveResults(){
-  try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(results)); }catch(e){ showToast('Erro ao salvar','err'); }
+  try{
+    await setDoc(doc(db,'bolao','results'),{data: JSON.stringify(results)});
+    await setDoc(doc(db,'bolao','participants'),{data: JSON.stringify(participants)});
+  }catch(e){ console.error('Erro ao salvar:',e); showToast('Erro ao salvar','err'); }
 }
 
 async function initAdmin(){

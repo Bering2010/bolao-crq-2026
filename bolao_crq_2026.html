@@ -200,12 +200,39 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padd
   </div>
 </div>
 <div class="toast-container" id="toast-container"></div>
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ── FIREBASE CONFIG ──
+const firebaseConfig = {
+  apiKey: "AIzaSyDKFfrS-SVBhQUBbJr0QrYCoLNEG7MTTyA",
+  authDomain: "bolao-crq-2026.firebaseapp.com",
+  projectId: "bolao-crq-2026",
+  storageBucket: "bolao-crq-2026.firebasestorage.app",
+  messagingSenderId: "363674646815",
+  appId: "1:363674646815:web:eab23d2f79e66ffee4182a"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const PTS={EXATO:50,VENC_GOL:40,RESULTADO:30,GOL_UM:10,PP:20,CAMP:300,VICE:200,TER:100,QUA:50};
 let participants=[],results={};
 const SK_P='bolao_crq_2026_participants',SK_R='bolao_crq_2026_results';
-async function save(){try{localStorage.setItem(SK_P,JSON.stringify(participants));localStorage.setItem(SK_R,JSON.stringify(results));}catch(e){}}
-async function loadState(){try{const p=localStorage.getItem(SK_P);if(p)participants=JSON.parse(p);}catch(e){}try{const r=localStorage.getItem(SK_R);if(r)results=JSON.parse(r);}catch(e){}}
+async function save(){
+  try{
+    await setDoc(doc(db,'bolao','participants'),{data: JSON.stringify(participants)});
+    await setDoc(doc(db,'bolao','results'),{data: JSON.stringify(results)});
+  }catch(e){console.error('Erro ao salvar:',e);}
+}
+async function loadState(){
+  try{
+    const pSnap=await getDoc(doc(db,'bolao','participants'));
+    if(pSnap.exists()) participants=JSON.parse(pSnap.data().data||'[]');
+    const rSnap=await getDoc(doc(db,'bolao','results'));
+    if(rSnap.exists()) results=JSON.parse(rSnap.data().data||'{}');
+  }catch(e){console.error('Erro ao carregar:',e);}
+}
 function initials(nome){const p=nome.trim().split(' ').filter(Boolean);return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():p[0]?.[0]?.toUpperCase()||'?';}
 function readExcel(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'binary'});const ps=wb.Sheets['PDF Palpites'];const nome=ps?(XLSX.utils.sheet_to_json(ps,{header:1})[1]?.[2]||file.name):file.name;const email=ps?(XLSX.utils.sheet_to_json(ps,{header:1})[2]?.[5]||''):'';const sheet=wb.Sheets['Meus Pontos'];if(!sheet){rej(new Error('Aba "Meus Pontos" não encontrada'));return;}const data=XLSX.utils.sheet_to_json(sheet,{header:1,defval:null});const jogos=[];for(let i=6;i<=77;i++){const row=data[i];if(!row)continue;const grupo=row[4],mand=row[5],visit=row[7],gM=row[8],gV=row[10];if(!mand||!visit)continue;jogos.push({idx:i-6+1,grupo:String(grupo||'?'),mandante:String(mand).trim(),visitante:String(visit).trim(),golsM:gM!==null?Number(gM):null,golsV:gV!==null?Number(gV):null,fase:'grupos',jogo:null});}for(let i=80;i<=121;i++){const row=data[i];if(!row)continue;const jn=row[4],mand=row[5],visit=row[7],gM=row[8],gV=row[10];if(!jn||isNaN(Number(jn))||!mand||!visit)continue;const num=Number(jn);let fase='oitavas';if(num>=89&&num<=96)fase='quartas';else if(num>=97&&num<=100)fase='semis';else if(num===101||num===102)fase='semis';else if(num===103)fase='terceiro';else if(num===104)fase='final';jogos.push({idx:null,jogo:num,grupo:null,mandante:String(mand).trim(),visitante:String(visit).trim(),golsM:gM!==null?Number(gM):null,golsV:gV!==null?Number(gV):null,fase});}res({nome:String(nome).trim(),email:String(email).trim(),jogos});}catch(err){rej(err);}};r.onerror=()=>rej(new Error('Falha ao ler'));r.readAsBinaryString(file);});}
 function calcScore(p){let total=0,exatos=0,p40=0,p30=0;for(const j of p.jogos){const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;const res=results[key];if(!res||res.golsM===null||res.golsV===null)continue;if(j.golsM===null||j.golsV===null)continue;const pM=j.golsM,pV=j.golsV,rM=Number(res.golsM),rV=Number(res.golsV);if(pM===rM&&pV===rV){total+=PTS.EXATO;exatos++;}else{const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E',ok=rv===pv,aM=pM===rM,aV=pV===rV;if(ok&&(aM||aV)){total+=PTS.VENC_GOL;p40++;}else if(ok){total+=PTS.RESULTADO;p30++;}else if(aM||aV){total+=PTS.GOL_UM;}}if(j.fase!=='grupos'){if(res.mandante&&j.mandante===res.mandante)total+=PTS.PP;if(res.visitante&&j.visitante===res.visitante)total+=PTS.PP;}}return{total,exatos,p40,p30};}
@@ -225,7 +252,29 @@ zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
 zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag-over');processFiles([...e.dataTransfer.files]);});
 document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay'))closeModal();});
 async function init(){initParticles();await loadState();renderParticipants();renderRanking();}
-init();
+init().then(()=>{
+  // Escuta mudanças em tempo real
+  onSnapshot(doc(db,'bolao','participants'), snap=>{
+    if(snap.exists()){
+      const fresh=JSON.parse(snap.data().data||'[]');
+      // Só atualiza se diferente do que temos
+      if(JSON.stringify(fresh)!==JSON.stringify(participants)){
+        participants=fresh;
+        renderParticipants();
+        renderRanking();
+      }
+    }
+  });
+  onSnapshot(doc(db,'bolao','results'), snap=>{
+    if(snap.exists()){
+      const fresh=JSON.parse(snap.data().data||'{}');
+      if(JSON.stringify(fresh)!==JSON.stringify(results)){
+        results=fresh;
+        renderRanking();
+      }
+    }
+  });
+});
 </script>
 </body>
 </html>
