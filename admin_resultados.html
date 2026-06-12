@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Resultados · Bolão CRQ 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+  :root{--gold:#FFB800;--navy:#020B1E;--navy-card:#0D1F3C;--cyan:#00D4FF;--white:#FFFFFF;--grey:#8899BB;--red:#FF3B3B;--green:#00FF88;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Rajdhani',sans-serif;background:var(--navy);color:var(--white);min-height:100vh;}
+
+  #login-screen{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(ellipse 80% 60% at 50% 0%,#0A3060 0%,transparent 70%),linear-gradient(180deg,#020B1E,#061429);}
+  .login-box{background:rgba(13,31,60,.95);border:1px solid rgba(255,184,0,.3);padding:3rem;text-align:center;max-width:420px;width:100%;backdrop-filter:blur(20px);}
+  .login-logo{width:100px;margin-bottom:1.5rem;filter:drop-shadow(0 0 20px rgba(255,184,0,.4));}
+  .login-title{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;color:var(--gold);letter-spacing:.15em;margin-bottom:.3rem;}
+  .login-sub{font-size:.8rem;color:var(--grey);letter-spacing:.1em;margin-bottom:2rem;}
+  .login-input{width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);color:var(--white);font-family:'Rajdhani',sans-serif;font-size:1rem;padding:.9rem 1.2rem;outline:none;margin-bottom:1rem;transition:border-color .2s;}
+  .login-input:focus{border-color:var(--gold);box-shadow:0 0 15px rgba(255,184,0,.15);}
+  .login-btn{width:100%;background:linear-gradient(135deg,var(--gold),#FF8C00);color:var(--navy);font-family:'Orbitron',monospace;font-size:.85rem;font-weight:700;letter-spacing:.1em;padding:1rem;border:none;cursor:pointer;clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);transition:all .3s;}
+  .login-btn:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(255,184,0,.4);}
+  .login-error{color:var(--red);font-size:.85rem;margin-top:.8rem;display:none;}
+
+  #admin-screen{display:none;}
+  .admin-header{background:rgba(2,11,30,.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,184,0,.15);padding:0 2rem;position:sticky;top:0;z-index:100;}
+  .admin-header-inner{max-width:1400px;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between;}
+  .admin-brand{display:flex;align-items:center;gap:.8rem;}
+  .admin-brand img{width:40px;filter:drop-shadow(0 0 8px rgba(255,184,0,.3));}
+  .admin-brand-text{font-family:'Orbitron',monospace;font-size:.8rem;font-weight:700;color:var(--gold);letter-spacing:.1em;}
+  .admin-badge{font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.2em;color:var(--cyan);background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.2);padding:.3rem .8rem;}
+  .admin-logout{background:none;border:1px solid rgba(255,59,59,.3);color:var(--red);font-family:'Orbitron',monospace;font-size:.65rem;letter-spacing:.1em;padding:.4rem .9rem;cursor:pointer;transition:all .2s;}
+  .admin-logout:hover{background:rgba(255,59,59,.1);border-color:var(--red);}
+
+  .admin-tabs{background:rgba(6,20,41,.8);border-bottom:1px solid rgba(255,184,0,.08);}
+  .admin-tabs-inner{max-width:1400px;margin:0 auto;padding:0 2rem;display:flex;gap:0;overflow-x:auto;}
+  .tab-btn{font-family:'Orbitron',monospace;font-size:.65rem;font-weight:600;letter-spacing:.1em;color:var(--grey);padding:1rem 1.2rem;background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;}
+  .tab-btn.active{color:var(--gold);border-bottom-color:var(--gold);}
+  .tab-btn:hover:not(.active){color:var(--white);}
+
+  .admin-content{max-width:1400px;margin:0 auto;padding:2rem;}
+  .phase-header{font-family:'Orbitron',monospace;font-size:.7rem;letter-spacing:.25em;color:var(--cyan);text-transform:uppercase;padding:.6rem 0;border-bottom:1px solid rgba(0,212,255,.15);margin:2rem 0 .8rem;}
+  .groups-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:.4rem;}
+
+  .match-card{background:rgba(13,31,60,.6);border:1px solid rgba(255,184,0,.07);padding:.9rem 1.1rem;display:flex;align-items:center;gap:.8rem;transition:border-color .2s;}
+  .match-card:focus-within{border-color:rgba(255,184,0,.3);}
+  .match-num{font-family:'Orbitron',monospace;font-size:.6rem;color:var(--grey);text-align:center;min-width:24px;}
+  .match-date-box{text-align:center;min-width:64px;}
+  .match-date{font-size:.65rem;color:var(--cyan);font-family:'Orbitron',monospace;display:block;}
+  .match-time{font-size:.85rem;color:var(--gold);font-family:'Orbitron',monospace;font-weight:700;display:block;}
+  .match-grp{font-size:.6rem;color:var(--grey);display:block;letter-spacing:.1em;}
+  .match-row{display:flex;align-items:center;gap:.6rem;flex:1;flex-wrap:wrap;}
+  .match-team{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.9rem;color:var(--white);flex:1;min-width:70px;}
+  .match-team.away{text-align:right;}
+  .score-inputs{display:flex;align-items:center;gap:.25rem;flex-shrink:0;}
+  .score-in{width:36px;height:30px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.1);color:var(--white);font-family:'Orbitron',monospace;font-size:.85rem;text-align:center;outline:none;transition:border-color .2s;}
+  .score-in:focus{border-color:var(--gold);box-shadow:0 0 8px rgba(255,184,0,.2);}
+  .score-in.filled{border-color:rgba(0,255,136,.35);background:rgba(0,255,136,.05);}
+  .score-sep{color:var(--grey);font-weight:700;font-size:.8rem;}
+
+  .mm-card{background:rgba(13,31,60,.6);border:1px solid rgba(255,184,0,.08);padding:1.1rem 1.3rem;margin-bottom:.6rem;}
+  .mm-jogo-num{font-family:'Orbitron',monospace;font-size:.65rem;color:var(--grey);margin-bottom:.7rem;letter-spacing:.15em;}
+  .mm-selects-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.7rem;flex-wrap:wrap;}
+  .team-select{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.1);color:var(--white);font-family:'Rajdhani',sans-serif;font-size:.85rem;padding:.45rem .7rem;outline:none;cursor:pointer;transition:border-color .2s;flex:1;min-width:120px;}
+  .team-select:focus{border-color:var(--gold);}
+  .team-select.selected{border-color:rgba(255,184,0,.4);background:rgba(255,184,0,.04);}
+  .vs-badge{font-family:'Orbitron',monospace;font-size:.7rem;color:var(--grey);flex-shrink:0;}
+  .mm-score-row{display:flex;align-items:center;gap:.6rem;}
+  .mm-team-label{flex:1;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.9rem;color:var(--white);}
+  .mm-team-label.away{text-align:right;}
+
+  .save-bar{position:sticky;bottom:0;background:rgba(2,11,30,.97);backdrop-filter:blur(10px);border-top:1px solid rgba(255,184,0,.15);padding:1rem 2rem;display:flex;gap:1rem;align-items:center;justify-content:flex-end;}
+  .btn-save{background:linear-gradient(135deg,var(--gold),#FF8C00);color:var(--navy);font-family:'Orbitron',monospace;font-size:.8rem;font-weight:700;letter-spacing:.08em;padding:.85rem 2.5rem;border:none;cursor:pointer;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);transition:all .3s;}
+  .btn-save:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(255,184,0,.4);}
+  .save-status{font-family:'Orbitron',monospace;font-size:.7rem;color:var(--green);letter-spacing:.1em;opacity:0;transition:opacity .3s;}
+  .save-status.show{opacity:1;}
+
+  .toast-box{position:fixed;top:80px;right:2rem;z-index:500;display:flex;flex-direction:column;gap:.5rem;}
+  .toast{background:var(--navy-card);border-left:3px solid var(--green);padding:.8rem 1.2rem;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.85rem;box-shadow:0 4px 20px rgba(0,0,0,.4);animation:ti .3s ease-out;min-width:260px;}
+  .toast.err{border-color:var(--red);}
+  @keyframes ti{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+  .tab-panel{display:none;} .tab-panel.active{display:block;}
+  .info-note{color:var(--grey);font-size:.85rem;margin-bottom:1.5rem;line-height:1.5;}
+  .info-note span{color:var(--cyan);}
+  .back-link{font-family:'Orbitron',monospace;font-size:.65rem;color:var(--grey);letter-spacing:.1em;text-decoration:none;transition:color .2s;}
+  .back-link:hover{color:var(--gold);}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <img class="login-logo" src="data:image/png;base64,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" alt="Bolão CRQ">
+    <div class="login-title">PAINEL ADMINISTRATIVO</div>
+    <div class="login-sub">BOLÃO CRQ — COPA DO MUNDO 2026</div>
+    <input type="password" class="login-input" id="pwd-input" placeholder="Senha de acesso"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">⚡ ENTRAR</button>
+    <div class="login-error" id="login-error">Senha incorreta. Tente novamente.</div>
+    <div style="margin-top:2rem;">
+      <a class="back-link" href="bolao_crq_2026.html">← Voltar ao Bolão</a>
+    </div>
+  </div>
+</div>
+
+<div id="admin-screen">
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <div class="admin-brand">
+        <img src="data:image/png;base64,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" alt="Logo">
+        <div>
+          <div class="admin-brand-text">BOLÃO CRQ 2026</div>
+          <div style="font-size:.6rem;color:var(--grey);letter-spacing:.1em;">PAINEL ADMINISTRATIVO</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div class="admin-badge">ADMIN</div>
+        <button class="admin-logout" onclick="logout()">SAIR</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin-tabs">
+    <div class="admin-tabs-inner">
+      <button class="tab-btn active" onclick="switchTab('grupos',this)">⚽ FASE DE GRUPOS</button>
+      <button class="tab-btn" onclick="switchTab('oitavas',this)">⚔️ OITAVAS</button>
+      <button class="tab-btn" onclick="switchTab('quartas',this)">⚡ QUARTAS</button>
+      <button class="tab-btn" onclick="switchTab('semis',this)">🔥 SEMIFINAIS</button>
+      <button class="tab-btn" onclick="switchTab('terceiro',this)">🥉 3° LUGAR</button>
+      <button class="tab-btn" onclick="switchTab('final',this)">🏆 FINAL</button>
+    </div>
+  </div>
+
+  <div class="admin-content">
+    <div id="tab-grupos" class="tab-panel active">
+      <p class="info-note">Insira o placar real após cada jogo. Horários em <span>horário de Brasília</span>. Pênaltis não contam.</p>
+      <div id="grupos-content"></div>
+    </div>
+    <div id="tab-oitavas" class="tab-panel">
+      <p class="info-note">Selecione os times de cada confronto e informe o placar. A seleção correta dos times gera <span>pontuação PP (20 pts)</span> para quem acertou o posicionamento.</p>
+      <div id="oitavas-content"></div>
+    </div>
+    <div id="tab-quartas" class="tab-panel">
+      <p class="info-note">Quartas de final — Jogos 89 a 96. Selecione os times classificados e informe o placar.</p>
+      <div id="quartas-content"></div>
+    </div>
+    <div id="tab-semis" class="tab-panel">
+      <p class="info-note">Semifinais — Jogos 97 a 100.</p>
+      <div id="semis-content"></div>
+    </div>
+    <div id="tab-terceiro" class="tab-panel">
+      <p class="info-note">Disputa pelo 3° lugar — Jogo 103.</p>
+      <div id="terceiro-content"></div>
+    </div>
+    <div id="tab-final" class="tab-panel">
+      <p class="info-note">Grande Final — Jogo 104.</p>
+      <div id="final-content"></div>
+    </div>
+  </div>
+
+  <div class="save-bar">
+    <span class="save-status" id="save-status">✅ Dados salvos! O ranking sera atualizado automaticamente.</span>
+    <button class="btn-save" onclick="saveAll()">💾 SALVAR RESULTADOS</button>
+  </div>
+</div>
+
+<div class="toast-box" id="toast-box"></div>
+
+<script>
+const PWD = 'Ber194032*';
+
+function doLogin(){
+  const v = document.getElementById('pwd-input').value;
+  if(v === PWD){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('admin-screen').style.display='block';
+    initAdmin();
+  } else {
+    document.getElementById('login-error').style.display='block';
+    document.getElementById('pwd-input').value='';
+    document.getElementById('pwd-input').focus();
+  }
+}
+function logout(){
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('admin-screen').style.display='none';
+  document.getElementById('pwd-input').value='';
+}
+
+const STORAGE_KEY = 'bolao_crq_2026_results';
+
+const TEAMS = ["Africa do Sul","Alemanha","Argentina","Argelia","Arabia Saudita","Australia","Brasil","Belgica","Bosnia e Herzegovina","Cabo Verde","Canada","Catar","Colombia","Congo RD","Costa do Marfim","Croatia","Curacao","Egito","Equador","Escocia","Espanha","Estados Unidos","Franca","Gana","Haiti","Holanda","Inglaterra","Iraque","Ira","Japao","Jordania","Marrocos","Mexico","Noruega","Nova Zelandia","Panama","Paraguai","Portugal","Republica da Coreia","Senegal","Suecia","Suica","Tchequia","Tunisia","Turquia","Uruguai","Uzbequistao","Austria"];
+
+// EXACT names as in spreadsheet
+const TEAMS_EXACT = ["África do Sul","Alemanha","Argentina","Argélia","Arábia Saudita","Austrália","Brasil","Bélgica","Bósnia e Herzegovina","Cabo Verde","Canadá","Catar","Colômbia","Congo RD","Costa do Marfim","Croácia","Curaçao","Egito","Equador","Escócia","Espanha","Estados Unidos","França","Gana","Haiti","Holanda","Inglaterra","Iraque","Irã","Japão","Jordânia","Marrocos","México","Noruega","Nova Zelândia","Panamá","Paraguai","Portugal","República da Coreia","Senegal","Suécia","Suíça","Tchéquia","Tunísia","Turquia","Uruguai","Uzbequistão","Áustria"];
+
+const GRUPOS_JOGOS = [
+  {idx:1,data:"11/06",hora:"16:00",grp:"A",mand:"México",visit:"África do Sul"},
+  {idx:2,data:"11/06",hora:"23:00",grp:"A",mand:"República da Coreia",visit:"Tchéquia"},
+  {idx:3,data:"12/06",hora:"16:00",grp:"B",mand:"Canadá",visit:"Bósnia e Herzegovina"},
+  {idx:4,data:"12/06",hora:"22:00",grp:"D",mand:"Estados Unidos",visit:"Paraguai"},
+  {idx:5,data:"13/06",hora:"16:00",grp:"B",mand:"Catar",visit:"Suíça"},
+  {idx:6,data:"13/06",hora:"19:00",grp:"C",mand:"Brasil",visit:"Marrocos"},
+  {idx:7,data:"13/06",hora:"22:00",grp:"C",mand:"Haiti",visit:"Escócia"},
+  {idx:8,data:"14/06",hora:"01:00",grp:"D",mand:"Austrália",visit:"Turquia"},
+  {idx:9,data:"14/06",hora:"14:00",grp:"E",mand:"Alemanha",visit:"Curaçao"},
+  {idx:10,data:"14/06",hora:"17:00",grp:"F",mand:"Holanda",visit:"Japão"},
+  {idx:11,data:"14/06",hora:"20:00",grp:"E",mand:"Costa do Marfim",visit:"Equador"},
+  {idx:12,data:"14/06",hora:"23:00",grp:"F",mand:"Suécia",visit:"Tunísia"},
+  {idx:13,data:"15/06",hora:"13:00",grp:"H",mand:"Espanha",visit:"Cabo Verde"},
+  {idx:14,data:"15/06",hora:"16:00",grp:"G",mand:"Bélgica",visit:"Egito"},
+  {idx:15,data:"15/06",hora:"19:00",grp:"H",mand:"Arábia Saudita",visit:"Uruguai"},
+  {idx:16,data:"15/06",hora:"22:00",grp:"G",mand:"Irã",visit:"Nova Zelândia"},
+  {idx:17,data:"16/06",hora:"16:00",grp:"I",mand:"França",visit:"Senegal"},
+  {idx:18,data:"16/06",hora:"19:00",grp:"I",mand:"Iraque",visit:"Noruega"},
+  {idx:19,data:"16/06",hora:"22:00",grp:"J",mand:"Argentina",visit:"Argélia"},
+  {idx:20,data:"17/06",hora:"01:00",grp:"J",mand:"Áustria",visit:"Jordânia"},
+  {idx:21,data:"17/06",hora:"14:00",grp:"K",mand:"Portugal",visit:"Congo RD"},
+  {idx:22,data:"17/06",hora:"17:00",grp:"L",mand:"Inglaterra",visit:"Croácia"},
+  {idx:23,data:"17/06",hora:"20:00",grp:"L",mand:"Gana",visit:"Panamá"},
+  {idx:24,data:"17/06",hora:"21:00",grp:"K",mand:"Uzbequistão",visit:"Colômbia"},
+  {idx:25,data:"18/06",hora:"13:00",grp:"A",mand:"Tchéquia",visit:"África do Sul"},
+  {idx:26,data:"18/06",hora:"16:00",grp:"B",mand:"Suíça",visit:"Bósnia e Herzegovina"},
+  {idx:27,data:"18/06",hora:"19:00",grp:"B",mand:"Canadá",visit:"Catar"},
+  {idx:28,data:"18/06",hora:"22:00",grp:"A",mand:"México",visit:"República da Coreia"},
+  {idx:29,data:"19/06",hora:"16:00",grp:"D",mand:"Estados Unidos",visit:"Austrália"},
+  {idx:30,data:"19/06",hora:"19:00",grp:"C",mand:"Escócia",visit:"Marrocos"},
+  {idx:31,data:"19/06",hora:"21:30",grp:"C",mand:"Brasil",visit:"Haiti"},
+  {idx:32,data:"20/06",hora:"00:00",grp:"D",mand:"Turquia",visit:"Paraguai"},
+  {idx:33,data:"20/06",hora:"14:00",grp:"F",mand:"Holanda",visit:"Suécia"},
+  {idx:34,data:"20/06",hora:"17:00",grp:"E",mand:"Alemanha",visit:"Costa do Marfim"},
+  {idx:35,data:"20/06",hora:"21:00",grp:"E",mand:"Equador",visit:"Curaçao"},
+  {idx:36,data:"20/06",hora:"23:00",grp:"F",mand:"Tunísia",visit:"Japão"},
+  {idx:37,data:"21/06",hora:"13:00",grp:"H",mand:"Espanha",visit:"Arábia Saudita"},
+  {idx:38,data:"21/06",hora:"16:00",grp:"G",mand:"Bélgica",visit:"Irã"},
+  {idx:39,data:"21/06",hora:"19:00",grp:"H",mand:"Uruguai",visit:"Cabo Verde"},
+  {idx:40,data:"21/06",hora:"22:00",grp:"G",mand:"Nova Zelândia",visit:"Egito"},
+  {idx:41,data:"22/06",hora:"14:00",grp:"J",mand:"Argentina",visit:"Áustria"},
+  {idx:42,data:"22/06",hora:"18:00",grp:"I",mand:"França",visit:"Iraque"},
+  {idx:43,data:"22/06",hora:"21:00",grp:"I",mand:"Noruega",visit:"Senegal"},
+  {idx:44,data:"23/06",hora:"00:00",grp:"J",mand:"Jordânia",visit:"Argélia"},
+  {idx:45,data:"23/06",hora:"14:00",grp:"K",mand:"Portugal",visit:"Uzbequistão"},
+  {idx:46,data:"23/06",hora:"17:00",grp:"L",mand:"Inglaterra",visit:"Gana"},
+  {idx:47,data:"23/06",hora:"20:00",grp:"L",mand:"Panamá",visit:"Croácia"},
+  {idx:48,data:"23/06",hora:"23:00",grp:"K",mand:"Colômbia",visit:"Congo RD"},
+  {idx:49,data:"24/06",hora:"16:00",grp:"B",mand:"Suíça",visit:"Canadá"},
+  {idx:50,data:"24/06",hora:"16:00",grp:"B",mand:"Bósnia e Herzegovina",visit:"Catar"},
+  {idx:51,data:"24/06",hora:"19:00",grp:"C",mand:"Marrocos",visit:"Haiti"},
+  {idx:52,data:"24/06",hora:"19:00",grp:"C",mand:"Escócia",visit:"Brasil"},
+  {idx:53,data:"24/06",hora:"22:00",grp:"A",mand:"África do Sul",visit:"República da Coreia"},
+  {idx:54,data:"24/06",hora:"22:00",grp:"A",mand:"Tchéquia",visit:"México"},
+  {idx:55,data:"25/06",hora:"17:00",grp:"E",mand:"Curaçao",visit:"Costa do Marfim"},
+  {idx:56,data:"25/06",hora:"17:00",grp:"E",mand:"Equador",visit:"Alemanha"},
+  {idx:57,data:"25/06",hora:"20:00",grp:"F",mand:"Japão",visit:"Suécia"},
+  {idx:58,data:"25/06",hora:"20:00",grp:"F",mand:"Tunísia",visit:"Holanda"},
+  {idx:59,data:"25/06",hora:"23:00",grp:"D",mand:"Paraguai",visit:"Austrália"},
+  {idx:60,data:"25/06",hora:"23:00",grp:"D",mand:"Turquia",visit:"Estados Unidos"},
+  {idx:61,data:"26/06",hora:"16:00",grp:"I",mand:"Senegal",visit:"Iraque"},
+  {idx:62,data:"26/06",hora:"16:00",grp:"I",mand:"Noruega",visit:"França"},
+  {idx:63,data:"26/06",hora:"21:00",grp:"H",mand:"Cabo Verde",visit:"Arábia Saudita"},
+  {idx:64,data:"26/06",hora:"21:00",grp:"H",mand:"Uruguai",visit:"Espanha"},
+  {idx:65,data:"27/06",hora:"00:00",grp:"G",mand:"Egito",visit:"Irã"},
+  {idx:66,data:"27/06",hora:"00:00",grp:"G",mand:"Nova Zelândia",visit:"Bélgica"},
+  {idx:67,data:"27/06",hora:"18:00",grp:"L",mand:"Croácia",visit:"Gana"},
+  {idx:68,data:"27/06",hora:"18:00",grp:"L",mand:"Panamá",visit:"Inglaterra"},
+  {idx:69,data:"27/06",hora:"20:30",grp:"K",mand:"Colômbia",visit:"Portugal"},
+  {idx:70,data:"27/06",hora:"20:30",grp:"K",mand:"Congo RD",visit:"Uzbequistão"},
+  {idx:71,data:"27/06",hora:"23:00",grp:"J",mand:"Argélia",visit:"Áustria"},
+  {idx:72,data:"27/06",hora:"23:00",grp:"J",mand:"Jordânia",visit:"Argentina"},
+];
+
+const MM_JOGOS = {
+  oitavas:[73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88],
+  quartas:[89,90,91,92,93,94,95,96],
+  semis:[97,98,99,100],
+  terceiro:[103],
+  final:[104]
+};
+
+let results = {};
+
+async function loadResults(){
+  try{ const r=localStorage.getItem(STORAGE_KEY); if(r) results=JSON.parse(r); }catch(e){}
+}
+async function saveResults(){
+  try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(results)); }catch(e){ showToast('Erro ao salvar','err'); }
+}
+
+async function initAdmin(){
+  await loadResults();
+  buildGrupos();
+  buildMM('oitavas');
+  buildMM('quartas');
+  buildMM('semis');
+  buildMM('terceiro');
+  buildMM('final');
+}
+
+function buildGrupos(){
+  const byGrp={};
+  for(const j of GRUPOS_JOGOS){ if(!byGrp[j.grp]) byGrp[j.grp]=[]; byGrp[j.grp].push(j); }
+  let html='';
+  for(const grp of 'ABCDEFGHIJKL'.split('')){
+    if(!byGrp[grp]) continue;
+    html+=`<div class="phase-header">GRUPO ${grp}</div><div class="groups-grid">`;
+    for(const j of byGrp[grp]){
+      const key=`g${j.idx}`; const r=results[key]||{};
+      const mV=r.golsM??''; const vV=r.golsV??'';
+      html+=`<div class="match-card" style="display:grid;grid-template-columns:24px 70px 1fr;gap:.7rem;">
+        <div class="match-num">${j.idx}</div>
+        <div class="match-date-box"><span class="match-date">${j.data}</span><span class="match-time">${j.hora}</span><span class="match-grp">GRP ${j.grp}</span></div>
+        <div class="match-row">
+          <span class="match-team">${j.mand}</span>
+          <div class="score-inputs">
+            <input class="score-in${mV!==''?' filled':''}" type="number" min="0" max="20" value="${mV}" placeholder="—"
+              oninput="setScore('${key}','golsM',this.value,this)">
+            <span class="score-sep">×</span>
+            <input class="score-in${vV!==''?' filled':''}" type="number" min="0" max="20" value="${vV}" placeholder="—"
+              oninput="setScore('${key}','golsV',this.value,this)">
+          </div>
+          <span class="match-team away">${j.visit}</span>
+        </div>
+      </div>`;
+    }
+    html+='</div>';
+  }
+  document.getElementById('grupos-content').innerHTML=html;
+}
+
+function teamSelectOpts(sel){
+  return TEAMS_EXACT.map(t=>`<option value="${t}"${t===sel?' selected':''}>${t}</option>`).join('');
+}
+
+function buildMM(fase){
+  const jogos=MM_JOGOS[fase];
+  let html='';
+  for(const num of jogos){
+    const key=`mm${num}`; const r=results[key]||{};
+    const mT=r.mandante||''; const vT=r.visitante||'';
+    const mV=r.golsM??''; const vV=r.golsV??'';
+    html+=`<div class="mm-card">
+      <div class="mm-jogo-num">JOGO ${num}</div>
+      <div class="mm-selects-row">
+        <select class="team-select${mT?' selected':''}" id="sel_${key}_m"
+          onchange="setScore('${key}','mandante',this.value,this);document.getElementById('lbl_${key}_m').textContent=this.value||'(Mandante)'">
+          <option value="">— Selecionar Mandante —</option>
+          ${teamSelectOpts(mT)}
+        </select>
+        <span class="vs-badge">VS</span>
+        <select class="team-select${vT?' selected':''}" id="sel_${key}_v"
+          onchange="setScore('${key}','visitante',this.value,this);document.getElementById('lbl_${key}_v').textContent=this.value||'(Visitante)'">
+          <option value="">— Selecionar Visitante —</option>
+          ${teamSelectOpts(vT)}
+        </select>
+      </div>
+      <div class="mm-score-row">
+        <span class="mm-team-label" id="lbl_${key}_m">${mT||'(Mandante)'}</span>
+        <div class="score-inputs">
+          <input class="score-in${mV!==''?' filled':''}" type="number" min="0" max="20" value="${mV}" placeholder="—"
+            oninput="setScore('${key}','golsM',this.value,this)">
+          <span class="score-sep">×</span>
+          <input class="score-in${vV!==''?' filled':''}" type="number" min="0" max="20" value="${vV}" placeholder="—"
+            oninput="setScore('${key}','golsV',this.value,this)">
+        </div>
+        <span class="mm-team-label away" id="lbl_${key}_v">${vT||'(Visitante)'}</span>
+      </div>
+    </div>`;
+  }
+  document.getElementById(`${fase}-content`).innerHTML=html;
+}
+
+function setScore(key,field,val,el){
+  if(!results[key]) results[key]={};
+  if(field==='golsM'||field==='golsV'){
+    results[key][field]=val===''?null:Number(val);
+    if(el) el.classList.toggle('filled',val!=='');
+  } else {
+    results[key][field]=val||null;
+    if(el) el.classList.toggle('selected',!!val);
+  }
+}
+
+async function saveAll(){
+  await saveResults();
+  const s=document.getElementById('save-status');
+  s.classList.add('show');
+  setTimeout(()=>s.classList.remove('show'),4000);
+  showToast('✅ Resultados salvos! O bolão sera atualizado automaticamente.');
+}
+
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  btn.classList.add('active');
+}
+
+function showToast(msg,type){
+  const box=document.getElementById('toast-box');
+  const t=document.createElement('div');
+  t.className='toast'+(type==='err'?' err':'');
+  t.textContent=msg;
+  box.appendChild(t);
+  setTimeout(()=>t.remove(),4500);
+}
+</script>
+</body>
+</html>
