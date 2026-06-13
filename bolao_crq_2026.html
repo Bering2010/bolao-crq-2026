@@ -125,16 +125,6 @@ main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:4rem 2re
 .toast{background:var(--navy-card);border-left:3px solid var(--green);padding:1rem 1.5rem;display:flex;align-items:center;gap:0.8rem;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:0.9rem;box-shadow:0 8px 30px rgba(0,0,0,0.5);animation:toastin 0.3s ease-out;min-width:280px;}
 .toast.error{border-color:var(--red);}
 @keyframes toastin{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-.pwd-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;}
-.pwd-overlay.open{display:flex;}
-.pwd-box{background:var(--navy-card);border:1px solid rgba(255,184,0,0.3);padding:2.5rem;text-align:center;max-width:360px;width:90%;}
-.pwd-title{font-family:'Orbitron',monospace;font-size:0.85rem;font-weight:700;color:var(--gold);letter-spacing:0.15em;margin-bottom:1.5rem;}
-.pwd-input{width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);color:var(--white);font-family:'Rajdhani',sans-serif;font-size:1rem;padding:.8rem 1rem;outline:none;margin-bottom:.8rem;transition:border-color .2s;}
-.pwd-input:focus{border-color:var(--gold);}
-.pwd-err{color:var(--red);font-size:.8rem;margin-bottom:.8rem;display:none;}
-.pwd-btns{display:flex;gap:.8rem;}
-.pwd-ok{flex:1;background:linear-gradient(135deg,var(--gold),#FF8C00);color:var(--navy);font-family:'Orbitron',monospace;font-size:.75rem;font-weight:700;padding:.75rem;border:none;cursor:pointer;}
-.pwd-cancel{flex:1;background:none;border:1px solid rgba(255,255,255,.15);color:var(--grey);font-family:'Orbitron',monospace;font-size:.75rem;padding:.75rem;cursor:pointer;}
 footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padding:3rem 2rem;text-align:center;}
 .footer-logo{font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:0.5rem;}
 @media(max-width:768px){.nav-links{display:none}.podium{flex-direction:column;align-items:center}.p2,.p3{width:280px}}
@@ -205,18 +195,6 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padd
   <div style="font-size:0.8rem;color:var(--grey);margin-top:0.5rem;letter-spacing:0.1em;">CRQ · 4ª Região · São Paulo</div>
   <div style="font-size:0.75rem;color:var(--grey);margin-top:0.3rem;opacity:0.4;">© 2026 · Caráter exclusivamente recreativo</div>
 </footer>
-<div class="pwd-overlay" id="pwd-overlay">
-  <div class="pwd-box">
-    <div class="pwd-title" id="pwd-title">🔒 SENHA NECESSÁRIA</div>
-    <input type="password" class="pwd-input" id="pwd-field" placeholder="Digite a senha"
-      onkeydown="if(event.key==='Enter')pwdConfirm()">
-    <div class="pwd-err" id="pwd-err">Senha incorreta. Tente novamente.</div>
-    <div class="pwd-btns">
-      <button class="pwd-ok" onclick="pwdConfirm()">✔ CONFIRMAR</button>
-      <button class="pwd-cancel" onclick="pwdClose()">✕ CANCELAR</button>
-    </div>
-  </div>
-</div>
 <div class="modal-overlay" id="modal-overlay">
   <div class="modal">
     <div class="modal-header"><div class="modal-title" id="modal-title">PALPITES</div><button class="modal-close" onclick="closeModal()">✕</button></div>
@@ -225,33 +203,6 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padd
 </div>
 <div class="toast-container" id="toast-container"></div>
 <script>
-// ── SENHA ──
-const SENHA='Ber194032*';
-let _pwdCallback=null;
-function pwdAsk(titulo,cb){
-  _pwdCallback=cb;
-  document.getElementById('pwd-title').textContent='🔒 '+titulo;
-  document.getElementById('pwd-field').value='';
-  document.getElementById('pwd-err').style.display='none';
-  document.getElementById('pwd-overlay').classList.add('open');
-  setTimeout(()=>document.getElementById('pwd-field').focus(),100);
-}
-function pwdConfirm(){
-  const v=document.getElementById('pwd-field').value;
-  if(v===SENHA){
-    document.getElementById('pwd-overlay').classList.remove('open');
-    if(_pwdCallback)_pwdCallback();
-    _pwdCallback=null;
-  }else{
-    document.getElementById('pwd-err').style.display='block';
-    document.getElementById('pwd-field').value='';
-    document.getElementById('pwd-field').focus();
-  }
-}
-function pwdClose(){
-  document.getElementById('pwd-overlay').classList.remove('open');
-  _pwdCallback=null;
-}
 // ── FIREBASE CONFIG ──
 const firebaseConfig = {
   apiKey: "AIzaSyDKFfrS-SVBhQUBbJr0QrYCoLNEG7MTTyA",
@@ -265,12 +216,78 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 const PTS={EXATO:50,VENC_GOL:40,RESULTADO:30,GOL_UM:10,PP:20,CAMP:300,VICE:200,TER:100,QUA:50};
+
+// Fases/rodadas para ranking por fase
+// Rodada 1: jogos grupos idx 1-24 (11/06 a 17/06)
+// Rodada 2: jogos grupos idx 25-48 (18/06 a 23/06)  
+// Rodada 3: jogos grupos idx 49-72 (24/06 a 27/06)
+// 16avos: mm 73-88; Oitavas: mm 89-96; Quartas: mm 97-100 (semis no reg são "oitavas")
+// Regulamento 8.3: R1, R2, R3, 16avos, Oitavas, Quartas
+const FASES_PREMIADAS = [
+  {
+    id:'r1', label:'1ª Rodada',
+    filter: j => j.fase==='grupos' && j.idx>=1 && j.idx<=24,
+    // Último jogo: jogo 24, 17/06 21:00 Brasília — fecha 3h depois = 00:00 18/06
+    ultimoKey: 'g24',
+    fechaApos: new Date('2026-06-18T00:00:00-03:00') // 00:00 horário Brasília
+  },
+  {
+    id:'r2', label:'2ª Rodada',
+    filter: j => j.fase==='grupos' && j.idx>=25 && j.idx<=48,
+    // Último jogo: jogo 48, 23/06 23:00 Brasília — fecha 3h depois = 02:00 24/06
+    ultimoKey: 'g48',
+    fechaApos: new Date('2026-06-24T02:00:00-03:00')
+  },
+  {
+    id:'r3', label:'3ª Rodada',
+    filter: j => j.fase==='grupos' && j.idx>=49 && j.idx<=72,
+    // Último jogo: jogo 72, 27/06 23:00 Brasília — fecha 3h depois = 02:00 28/06
+    ultimoKey: 'g72',
+    fechaApos: new Date('2026-06-28T02:00:00-03:00')
+  },
+  {
+    id:'r16', label:'16 Avos de Final',
+    filter: j => j.fase==='oitavas',
+    // Último jogo: mm88, 03/07 — jogo mais tarde ~23:30 Brasília, fecha 3h depois = 02:30 04/07
+    ultimoKey: 'mm88',
+    fechaApos: new Date('2026-07-04T02:30:00-03:00')
+  },
+  {
+    id:'r8', label:'Oitavas de Final',
+    filter: j => j.fase==='quartas',
+    // Último jogo: mm96, 07/07 — ~23:00 Brasília, fecha = 02:00 08/07
+    ultimoKey: 'mm96',
+    fechaApos: new Date('2026-07-08T02:00:00-03:00')
+  },
+  {
+    id:'r4', label:'Quartas de Final',
+    filter: j => j.fase==='semis' || j.fase==='terceiro',
+    // Último jogo: mm100, 11/07 — ~22:00 Brasília (21:00 ET), fecha = 01:00 12/07
+    ultimoKey: 'mm100',
+    fechaApos: new Date('2026-07-12T01:00:00-03:00')
+  },
+];
+
+// Verifica se uma fase deve ser fechada automaticamente
+function faseDeveFechar(fase){
+  const agora = new Date();
+  // 1) Passou 3h do último jogo?
+  if(agora < fase.fechaApos) return false;
+  // 2) O último jogo tem placar preenchido?
+  const r = results[fase.ultimoKey];
+  if(!r || r.golsM === null || r.golsM === undefined || r.golsV === null || r.golsV === undefined) return false;
+  return true;
+}
+
+// Líderes salvos por fase {faseId: {nome, pts}}
+let lideresGravados = {};
 let participants=[],results={};
 const SK_P='bolao_crq_2026_participants',SK_R='bolao_crq_2026_results';
 async function save(){
   try{
     await db.collection('bolao').doc('participants').set({data: JSON.stringify(participants)});
     await db.collection('bolao').doc('results').set({data: JSON.stringify(results)});
+    await db.collection('bolao').doc('lideres').set({data: JSON.stringify(lideresGravados)});
   }catch(e){console.error('Erro ao salvar:',e);}
 }
 async function loadState(){
@@ -279,25 +296,143 @@ async function loadState(){
     if(pSnap.exists) participants=JSON.parse(pSnap.data().data||'[]');
     const rSnap=await db.collection('bolao').doc('results').get();
     if(rSnap.exists) results=JSON.parse(rSnap.data().data||'{}');
+    const lSnap=await db.collection('bolao').doc('lideres').get();
+    if(lSnap.exists) lideresGravados=JSON.parse(lSnap.data().data||'{}');
   }catch(e){console.error('Erro ao carregar:',e);}
 }
 function initials(nome){const p=nome.trim().split(' ').filter(Boolean);return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():p[0]?.[0]?.toUpperCase()||'?';}
 function readExcel(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'binary'});const ps=wb.Sheets['PDF Palpites'];const nome=ps?(XLSX.utils.sheet_to_json(ps,{header:1})[1]?.[2]||file.name):file.name;const email=ps?(XLSX.utils.sheet_to_json(ps,{header:1})[2]?.[5]||''):'';const sheet=wb.Sheets['Meus Pontos'];if(!sheet){rej(new Error('Aba "Meus Pontos" não encontrada'));return;}const data=XLSX.utils.sheet_to_json(sheet,{header:1,defval:null});const jogos=[];for(let i=6;i<=77;i++){const row=data[i];if(!row)continue;const grupo=row[4],mand=row[5],visit=row[7],gM=row[8],gV=row[10];if(!mand||!visit)continue;jogos.push({idx:i-6+1,grupo:String(grupo||'?'),mandante:String(mand).trim(),visitante:String(visit).trim(),golsM:gM!==null?Number(gM):null,golsV:gV!==null?Number(gV):null,fase:'grupos',jogo:null});}for(let i=80;i<=121;i++){const row=data[i];if(!row)continue;const jn=row[4],mand=row[5],visit=row[7],gM=row[8],gV=row[10];if(!jn||isNaN(Number(jn))||!mand||!visit)continue;const num=Number(jn);let fase='oitavas';if(num>=89&&num<=96)fase='quartas';else if(num>=97&&num<=100)fase='semis';else if(num===101||num===102)fase='semis';else if(num===103)fase='terceiro';else if(num===104)fase='final';jogos.push({idx:null,jogo:num,grupo:null,mandante:String(mand).trim(),visitante:String(visit).trim(),golsM:gM!==null?Number(gM):null,golsV:gV!==null?Number(gV):null,fase});}res({nome:String(nome).trim(),email:String(email).trim(),jogos});}catch(err){rej(err);}};r.onerror=()=>rej(new Error('Falha ao ler'));r.readAsBinaryString(file);});}
-function calcScore(p){let total=0,exatos=0,p40=0,p30=0;for(const j of p.jogos){const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;const res=results[key];if(!res||res.golsM===null||res.golsV===null)continue;if(j.golsM===null||j.golsV===null)continue;const pM=j.golsM,pV=j.golsV,rM=Number(res.golsM),rV=Number(res.golsV);if(pM===rM&&pV===rV){total+=PTS.EXATO;exatos++;}else{const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E',ok=rv===pv,aM=pM===rM,aV=pV===rV;if(ok&&(aM||aV)){total+=PTS.VENC_GOL;p40++;}else if(ok){total+=PTS.RESULTADO;p30++;}else if(aM||aV){total+=PTS.GOL_UM;}}if(j.fase!=='grupos'){if(res.mandante&&j.mandante===res.mandante)total+=PTS.PP;if(res.visitante&&j.visitante===res.visitante)total+=PTS.PP;}}return{total,exatos,p40,p30};}
+function calcScoreFiltered(p, filterFn){
+  let total=0,exatos=0,p40=0,p30=0;
+  const jogos = filterFn ? p.jogos.filter(filterFn) : p.jogos;
+  for(const j of jogos){const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;const res=results[key];if(!res||res.golsM===null||res.golsV===null)continue;if(j.golsM===null||j.golsV===null)continue;const pM=j.golsM,pV=j.golsV,rM=Number(res.golsM),rV=Number(res.golsV);if(pM===rM&&pV===rV){total+=PTS.EXATO;exatos++;}else{const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E',ok=rv===pv,aM=pM===rM,aV=pV===rV;if(ok&&(aM||aV)){total+=PTS.VENC_GOL;p40++;}else if(ok){total+=PTS.RESULTADO;p30++;}else if(aM||aV){total+=PTS.GOL_UM;}}if(j.fase!=='grupos'){if(res.mandante&&j.mandante===res.mandante)total+=PTS.PP;if(res.visitante&&j.visitante===res.visitante)total+=PTS.PP;}}return{total,exatos,p40,p30};}
+function calcScore(p){ return calcScoreFiltered(p, null); }
+function calcScorePhase(p, filterFn){ return calcScoreFiltered(p, filterFn); }
 function getPts(j,key){const r=results[key];if(!r||r.golsM===null||r.golsV===null||j.golsM===null||j.golsV===null)return null;const pM=j.golsM,pV=j.golsV,rM=Number(r.golsM),rV=Number(r.golsV);if(pM===rM&&pV===rV)return 50;const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E';if(rv===pv&&(pM===rM||pV===rV))return 40;if(rv===pv)return 30;if(pM===rM||pV===rV)return 10;return 0;}
 function renderParticipants(){const el=document.getElementById('participants-list');if(!participants.length){el.innerHTML='';return;}el.innerHTML=`<div style="margin-bottom:1rem;font-family:'Orbitron',monospace;font-size:0.7rem;letter-spacing:0.2em;color:var(--grey);text-transform:uppercase;">${participants.length} palpiteiro${participants.length!==1?'s':''} carregado${participants.length!==1?'s':''}</div><div class="participants-grid">${participants.map((p,i)=>`<div class="participant-card" onclick="openModal(${i})"><div class="pcard-avatar">${initials(p.nome)}</div><div style="flex:1"><div class="pcard-name">${p.nome}</div><div class="pcard-sub">${p.email||'sem e-mail'} · ${p.jogos.length} jogos</div></div><button class="pcard-remove" onclick="event.stopPropagation();removeP(${i})" title="Remover">✕</button></div>`).join('')}</div>`;document.getElementById('stat-p').textContent=participants.length;}
-function removeP(i){pwdAsk('EXCLUIR PALPITE',()=>{participants.splice(i,1);save();renderParticipants();renderRanking();showToast('Participante removido','info');});}
-function renderRanking(){const el=document.getElementById('ranking-content');if(!participants.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏆</div><div class="empty-text">Carregue as planilhas para ver o ranking</div></div>`;document.getElementById('stat-l').textContent='—';return;}const scored=participants.map((p,i)=>({...p,i,score:calcScore(p)})).sort((a,b)=>{if(b.score.total!==a.score.total)return b.score.total-a.score.total;if(b.score.exatos!==a.score.exatos)return b.score.exatos-a.score.exatos;if(b.score.p40!==a.score.p40)return b.score.p40-a.score.p40;return b.score.p30-a.score.p30;});const max=scored[0]?.score.total||1;document.getElementById('stat-l').textContent=max;const podHTML=`<div class="podium">${scored[1]?`<div class="podium-card p2 fade-in" style="animation-delay:0.15s" onclick="openModal(${scored[1].i})"><div class="podium-avatar">${initials(scored[1].nome)}<div class="podium-pos">2</div></div><div class="podium-name">${scored[1].nome}</div><span class="podium-score">${scored[1].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[1].score.exatos}×50</span><span class="badge">🎯${scored[1].score.p40}×40</span></div></div>`:''}${scored[0]?`<div class="podium-card p1 fade-in" style="animation-delay:0.05s" onclick="openModal(${scored[0].i})"><span class="podium-crown">👑</span><div class="podium-avatar">${initials(scored[0].nome)}<div class="podium-pos">1</div></div><div class="podium-name">${scored[0].nome}</div><span class="podium-score">${scored[0].score.total}</span><div class="podium-label">pontos · LÍDER</div><div class="podium-badges"><span class="badge">⚽${scored[0].score.exatos}×50</span><span class="badge">🎯${scored[0].score.p40}×40</span><span class="badge">✅${scored[0].score.p30}×30</span></div></div>`:''} ${scored[2]?`<div class="podium-card p3 fade-in" style="animation-delay:0.25s" onclick="openModal(${scored[2].i})"><div class="podium-avatar">${initials(scored[2].nome)}<div class="podium-pos">3</div></div><div class="podium-name">${scored[2].nome}</div><span class="podium-score">${scored[2].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[2].score.exatos}×50</span><span class="badge">🎯${scored[2].score.p40}×40</span></div></div>`:''}</div>`;const tableHTML=`<div class="rank-table-wrap fade-in" style="animation-delay:0.3s"><table class="rank-table"><thead><tr><th>#</th><th>Palpiteiro</th><th style="text-align:right">Pontos</th><th style="text-align:center">Exatos</th><th style="text-align:center">×40</th><th style="text-align:center">×30</th><th>Progresso</th></tr></thead><tbody>${scored.map((p,rank)=>`<tr onclick="openModal(${p.i})" style="cursor:pointer"><td><div class="rpos ${rank===0?'t1':rank===1?'t2':rank===2?'t3':''}">${rank+1}º</div></td><td><div class="rname-col"><div class="ravatar">${initials(p.nome)}</div><div><div class="rname">${p.nome}</div><div style="font-size:0.7rem;color:var(--grey)">${p.email||'—'}</div></div></div></td><td class="rscore">${p.score.total}</td><td style="text-align:center;color:var(--grey)">${p.score.exatos}</td><td style="text-align:center;color:var(--grey)">${p.score.p40}</td><td style="text-align:center;color:var(--grey)">${p.score.p30}</td><td><div class="rbar-wrap"><div class="rbar" style="width:${max>0?Math.round(p.score.total/max*100):0}%"></div></div></td></tr>`).join('')}</tbody></table></div>`;el.innerHTML=podHTML+tableHTML;}
+function removeP(i){checkAdmin(()=>{participants.splice(i,1);save();renderParticipants();renderRanking();showToast('Participante removido','info');});}
+function renderRanking(){const el=document.getElementById('ranking-content');if(!participants.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏆</div><div class="empty-text">Carregue as planilhas para ver o ranking</div></div>`;document.getElementById('stat-l').textContent='—';return;}const scored=participants.map((p,i)=>({...p,i,score:calcScore(p)})).sort((a,b)=>{
+    if(b.score.total!==a.score.total) return b.score.total-a.score.total;
+    if(b.score.exatos!==a.score.exatos) return b.score.exatos-a.score.exatos;
+    if(b.score.p40!==a.score.p40) return b.score.p40-a.score.p40;
+    return b.score.p30-a.score.p30;
+  });const max=scored[0]?.score.total||1;document.getElementById('stat-l').textContent=max;const podHTML=`<div class="podium">${scored[1]?`<div class="podium-card p2 fade-in" style="animation-delay:0.15s" onclick="openModal(${scored[1].i})"><div class="podium-avatar">${initials(scored[1].nome)}<div class="podium-pos">2</div></div><div class="podium-name">${scored[1].nome}</div><span class="podium-score">${scored[1].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[1].score.exatos}×50</span><span class="badge">🎯${scored[1].score.p40}×40</span></div></div>`:''}${scored[0]?`<div class="podium-card p1 fade-in" style="animation-delay:0.05s" onclick="openModal(${scored[0].i})"><span class="podium-crown">👑</span><div class="podium-avatar">${initials(scored[0].nome)}<div class="podium-pos">1</div></div><div class="podium-name">${scored[0].nome}</div><span class="podium-score">${scored[0].score.total}</span><div class="podium-label">pontos · LÍDER</div><div class="podium-badges"><span class="badge">⚽${scored[0].score.exatos}×50</span><span class="badge">🎯${scored[0].score.p40}×40</span><span class="badge">✅${scored[0].score.p30}×30</span></div></div>`:''} ${scored[2]?`<div class="podium-card p3 fade-in" style="animation-delay:0.25s" onclick="openModal(${scored[2].i})"><div class="podium-avatar">${initials(scored[2].nome)}<div class="podium-pos">3</div></div><div class="podium-name">${scored[2].nome}</div><span class="podium-score">${scored[2].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[2].score.exatos}×50</span><span class="badge">🎯${scored[2].score.p40}×40</span></div></div>`:''}</div>`;const tableHTML=`<div class="rank-table-wrap fade-in" style="animation-delay:0.3s"><table class="rank-table"><thead><tr><th>#</th><th>Palpiteiro</th><th style="text-align:right">Pontos</th><th style="text-align:center">Exatos</th><th style="text-align:center">×40</th><th style="text-align:center">×30</th><th>Progresso</th></tr></thead><tbody>${scored.map((p,rank)=>`<tr onclick="openModal(${p.i})" style="cursor:pointer"><td><div class="rpos ${rank===0?'t1':rank===1?'t2':rank===2?'t3':''}">${rank+1}º</div></td><td><div class="rname-col"><div class="ravatar">${initials(p.nome)}</div><div><div class="rname">${p.nome}</div><div style="font-size:0.7rem;color:var(--grey)">${p.email||'—'}</div></div></div></td><td class="rscore">${p.score.total}</td><td style="text-align:center;color:var(--grey)">${p.score.exatos}</td><td style="text-align:center;color:var(--grey)">${p.score.p40}</td><td style="text-align:center;color:var(--grey)">${p.score.p30}</td><td><div class="rbar-wrap"><div class="rbar" style="width:${max>0?Math.round(p.score.total/max*100):0}%"></div></div></td></tr>`).join('')}</tbody></table></div>`;el.innerHTML=podHTML+tableHTML+renderLideres();}
+
+function renderLideres(){
+  if(!Object.keys(lideresGravados).length && !participants.length) return '';
+  let html=`<div style="margin-top:3rem;">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div style="display:inline-block;font-family:'Orbitron',monospace;font-size:.65rem;letter-spacing:.35em;color:var(--cyan);text-transform:uppercase;padding:.4rem 1.2rem;border:1px solid rgba(0,212,255,.2);background:rgba(0,212,255,.05);margin-bottom:1rem;">Premiações por Fase</div>
+      <h3 style="font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:700;color:var(--white);">LÍDERES <span style="color:var(--gold)">POR FASE</span></h3>
+      <div style="width:80px;height:2px;background:linear-gradient(90deg,var(--gold),var(--cyan));margin:1rem auto 0;"></div>
+      <p style="color:var(--grey);font-size:.8rem;margin-top:.8rem;">Pontuação calculada apenas com os jogos de cada fase/rodada</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;">`;
+  
+  for(const fase of FASES_PREMIADAS){
+    if(!participants.length){ html+=`<div style="background:rgba(13,31,60,.5);border:1px solid rgba(255,184,0,.08);padding:1.5rem;text-align:center;"><div style="font-family:'Orbitron',monospace;font-size:.7rem;color:var(--cyan);letter-spacing:.15em;margin-bottom:.8rem;">${fase.label}</div><div style="color:var(--grey);font-size:.8rem;">Aguardando dados</div></div>`; continue; }
+    
+    const scored = participants.map(p=>({nome:p.nome,pts:calcScorePhase(p,fase.filter).total}))
+      .sort((a,b)=>b.pts-a.pts);
+    const lider = scored[0];
+    
+    // Auto-close: if conditions met and not yet saved, save now
+    const deveFechar = faseDeveFechar(fase);
+    if(deveFechar && (!lideresGravados[fase.id] || !lideresGravados[fase.id].nome)){
+      lideresGravados[fase.id] = {nome: lider.nome, pts: lider.pts, fechadoEm: new Date().toISOString()};
+      // Save async without blocking render
+      db.collection('bolao').doc('lideres').set({data: JSON.stringify(lideresGravados)});
+    }
+    
+    const gravado = lideresGravados[fase.id];
+    const hasResults = participants[0]?.jogos.filter(fase.filter).some(j=>{
+      const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;
+      const r=results[key];
+      return r&&r.golsM!==null&&r.golsV!==null;
+    });
+    
+    const isGravado = gravado && gravado.nome;
+    const liderNome = isGravado ? gravado.nome : (hasResults ? lider.nome : '—');
+    const liderPts  = isGravado ? gravado.pts  : (hasResults ? lider.pts  : '—');
+    
+    html+=`<div style="background:rgba(13,31,60,.6);border:1px solid rgba(255,184,0,.12);padding:1.5rem;position:relative;overflow:hidden;">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--gold),var(--cyan));"></div>
+      <div style="font-family:'Orbitron',monospace;font-size:.65rem;color:var(--cyan);letter-spacing:.15em;margin-bottom:.8rem;text-transform:uppercase;">${fase.label}</div>
+      <div style="display:flex;align-items:center;gap:.8rem;">
+        <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#FF8C00);color:var(--navy);font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">${liderNome!=='—'?initials(liderNome):'?'}</div>
+        <div>
+          <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:1rem;color:var(--white);">${liderNome}</div>
+          <div style="font-family:'Orbitron',monospace;font-size:1.3rem;font-weight:900;color:var(--gold);">${liderPts}${liderPts!=='—'?' pts':''}</div>
+        </div>
+      </div>
+      ${isGravado?`<div style="margin-top:.6rem;font-size:.65rem;color:var(--green);font-family:'Orbitron',monospace;letter-spacing:.1em;">✅ FASE ENCERRADA</div>`:''}
+      <button onclick="openFaseModal('${fase.id}')" style="margin-top:.8rem;width:100%;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);color:var(--cyan);font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.1em;padding:.4rem;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='rgba(0,212,255,.15)'" onmouseout="this.style.background='rgba(0,212,255,.08)'">VER RANKING DA FASE →</button>
+    </div>`;
+  }
+  html+=`</div></div>`;
+  return html;
+}
+
+function openFaseModal(faseId){
+  const fase = FASES_PREMIADAS.find(f=>f.id===faseId);
+  if(!fase||!participants.length) return;
+  const scored = participants.map(p=>({nome:p.nome,s:calcScorePhase(p,fase.filter)}))
+    .sort((a,b)=>{
+      if(b.s.total!==a.s.total) return b.s.total-a.s.total;
+      if(b.s.exatos!==a.s.exatos) return b.s.exatos-a.s.exatos;
+      if(b.s.p40!==a.s.p40) return b.s.p40-a.s.p40;
+      return b.s.p30-a.s.p30;
+    });
+  const isGravado = lideresGravados[faseId]?.nome;
+  let rows=scored.map((p,i)=>`
+    <tr>
+      <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Orbitron',monospace;font-size:.85rem;color:${i===0?'var(--gold)':i===1?'#C0C0C0':i===2?'#CD7F32':'var(--grey)'};">${i+1}º</td>
+      <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);">
+        <div style="display:flex;align-items:center;gap:.6rem;">
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--navy-light),var(--navy-mid));border:1px solid rgba(255,184,0,.2);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:.75rem;color:var(--gold);">${initials(p.nome)}</div>
+          <span style="font-family:'Rajdhani',sans-serif;font-weight:600;">${p.nome}</span>
+        </div>
+      </td>
+      <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Orbitron',monospace;font-weight:700;color:var(--gold);text-align:right;">${p.s.total}</td>
+      <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;color:var(--grey);font-size:.8rem;">${p.s.exatos}</td>
+      <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;color:var(--grey);font-size:.8rem;">${p.s.p40}</td>
+    </tr>`).join('');
+  
+  document.getElementById('modal-title').innerHTML=`RANKING — ${fase.label.toUpperCase()}${isGravado?' <span style="font-size:.6rem;color:var(--green);margin-left:.5rem;">✅ ENCERRADA</span>':''}`;
+  document.getElementById('modal-body').innerHTML=`
+    <div style="margin-bottom:1rem;padding:.8rem;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.1);font-size:.8rem;color:var(--grey);">
+      ℹ️ Pontuação calculada <strong style="color:var(--white);">apenas com os jogos desta fase</strong>. O ranking geral acumula todas as fases.
+    </div>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr style="background:rgba(0,0,0,.3);">
+        <th style="padding:.8rem 1rem;text-align:left;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">#</th>
+        <th style="padding:.8rem 1rem;text-align:left;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">PALPITEIRO</th>
+        <th style="padding:.8rem 1rem;text-align:right;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">PTS</th>
+        <th style="padding:.8rem 1rem;text-align:center;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">EXATOS</th>
+        <th style="padding:.8rem 1rem;text-align:center;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">40pts</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
 function openModal(idx){const p=participants[idx];if(!p)return;document.getElementById('modal-title').textContent=`PALPITES — ${p.nome.toUpperCase()}`;const sc=calcScore(p);let html=`<div style="display:flex;gap:2rem;flex-wrap:wrap;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,184,0,0.1)"><div><span style="font-family:'Orbitron',monospace;font-size:2rem;color:var(--gold);font-weight:900">${sc.total}</span> <span style="color:var(--grey);font-size:0.8rem">pontos totais</span></div><div style="display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap"><div><span style="color:var(--green);font-weight:700">${sc.exatos}</span> <span style="font-size:0.75rem;color:var(--grey)">placares exatos (50pts)</span></div><div><span style="color:var(--cyan);font-weight:700">${sc.p40}</span> <span style="font-size:0.75rem;color:var(--grey)">vencedor+gols (40pts)</span></div><div><span style="color:var(--gold);font-weight:700">${sc.p30}</span> <span style="font-size:0.75rem;color:var(--grey)">resultado (30pts)</span></div></div></div>`;const grupos=[...new Set(p.jogos.filter(j=>j.fase==='grupos').map(j=>j.grupo))].sort();for(const grp of grupos){const js=p.jogos.filter(j=>j.grupo===grp);html+=`<div class="modal-phase">GRUPO ${grp}</div>`;for(const j of js){const key=`g${j.idx}`;const r=results[key];const pts=getPts(j,key);const pc=pts===null?'':pts===50?'var(--green)':pts===40?'var(--cyan)':pts===30?'var(--gold)':pts===10?'var(--grey)':'var(--red)';const pb=pts!==null?`<span style="font-family:'Orbitron',monospace;font-size:0.7rem;color:${pc};font-weight:700;min-width:28px;text-align:right">${pts}pts</span>`:'';const rs=r&&r.golsM!==null&&r.golsV!==null?`<span style="font-size:0.65rem;color:var(--grey)">(${r.golsM}×${r.golsV})</span>`:'';html+=`<div class="modal-match"><div class="mteam home">${j.mandante}</div><div style="display:flex;align-items:center;gap:0.4rem"><div class="mscore">${j.golsM??'?'} × ${j.golsV??'?'}</div>${rs}${pb}</div><div class="mteam away">${j.visitante}</div></div>`;}}const fases=['oitavas','quartas','semis','terceiro','final'];const fL={oitavas:'⚔️ OITAVAS',quartas:'⚡ QUARTAS',semis:'🔥 SEMIFINAIS',terceiro:'🥉 3º LUGAR',final:'🏆 FINAL'};for(const fase of fases){const js=p.jogos.filter(j=>j.fase===fase).sort((a,b)=>a.jogo-b.jogo);if(!js.length)continue;html+=`<div class="modal-phase">${fL[fase]}</div>`;for(const j of js){const key=`mm${j.jogo}`;const r=results[key];const pts=getPts(j,key);const pc=pts===null?'':pts===50?'var(--green)':pts===40?'var(--cyan)':pts===30?'var(--gold)':pts===10?'var(--grey)':'var(--red)';const pb=pts!==null?`<span style="font-family:'Orbitron',monospace;font-size:0.7rem;color:${pc};font-weight:700;min-width:28px;text-align:right">${pts}pts</span>`:'';const rs=r&&r.golsM!==null&&r.golsV!==null?`<span style="font-size:0.65rem;color:var(--grey)">(${r.golsM}×${r.golsV})</span>`:'';let ppInfo='';if(r&&(r.mandante||r.visitante)&&j.fase!=='grupos'){const ppm=r.mandante&&j.mandante===r.mandante?'+20PP':'';const ppv=r.visitante&&j.visitante===r.visitante?'+20PP':'';if(ppm||ppv)ppInfo=`<span style="font-size:0.65rem;color:var(--green)">${[ppm,ppv].filter(Boolean).join(' ')}</span>`;}html+=`<div class="modal-match"><div class="mteam home">${j.mandante}</div><div style="display:flex;align-items:center;gap:0.4rem;flex-direction:column"><div style="display:flex;align-items:center;gap:0.4rem"><div class="mscore">${j.golsM??'?'} × ${j.golsV??'?'}</div>${rs}${pb}</div>${ppInfo}</div><div class="mteam away">${j.visitante}</div></div>`;}}document.getElementById('modal-body').innerHTML=html;document.getElementById('modal-overlay').classList.add('open');}
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+const ADMIN_PWD='Ber194032*';
+let adminUnlocked=false;
+function checkAdmin(callback){
+  if(adminUnlocked){callback();return;}
+  const pwd=prompt('Senha administrativa:');
+  if(pwd===ADMIN_PWD){adminUnlocked=true;callback();}
+  else if(pwd!==null){showToast('❌ Senha incorreta','error');}
+}
 async function processFiles(files){let added=0;for(const f of files){if(!f.name.endsWith('.xlsx')){showToast(`${f.name} não é .xlsx`,'error');continue;}try{const d=await readExcel(f);const ex=participants.findIndex(p=>p.nome===d.nome);if(ex>=0){participants[ex]=d;showToast(`✅ ${d.nome} atualizado`);}else{participants.push(d);showToast(`✅ ${d.nome} adicionado`);}added++;}catch(e){showToast(`❌ Erro: ${e.message}`,'error');}}if(added>0){await save();renderParticipants();renderRanking();}}
 function showToast(msg,type='success'){const c=document.getElementById('toast-container');const t=document.createElement('div');t.className=`toast${type==='error'?' error':''}`;t.innerHTML=`<span>${msg}</span>`;c.appendChild(t);setTimeout(()=>t.remove(),3500);}
 function initParticles(){const cv=document.getElementById('particles-canvas');const ctx=cv.getContext('2d');let W=cv.width=window.innerWidth,H=cv.height=window.innerHeight;const pts=Array.from({length:50},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,size:Math.random()*2+.5,color:Math.random()>.5?'#FFB800':'#00D4FF'}));function draw(){ctx.clearRect(0,0,W,H);for(const p of pts){p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fillStyle=p.color+'66';ctx.fill();}for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<100){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(255,184,0,${.05*(1-d/100)})`;ctx.lineWidth=.5;ctx.stroke();}}requestAnimationFrame(draw);}draw();window.addEventListener('resize',()=>{W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;});}
-document.getElementById('file-input').addEventListener('change',e=>{const files=[...e.target.files];e.target.value='';if(!files.length)return;pwdAsk('CARREGAR PALPITES',()=>{processFiles(files);});});
+document.getElementById('file-input').addEventListener('change',e=>{processFiles([...e.target.files]);e.target.value='';});
 const zone=document.getElementById('upload-zone');
 zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag-over');});
 zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
-zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag-over');const files=[...e.dataTransfer.files];if(!files.length)return;pwdAsk('CARREGAR PALPITES',()=>{processFiles(files);});});
+zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag-over');processFiles([...e.dataTransfer.files]);});
 document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay'))closeModal();});
 async function init(){initParticles();await loadState();renderParticipants();renderRanking();}
 init().then(()=>{
@@ -319,6 +454,12 @@ init().then(()=>{
         results=fresh;
         renderRanking();
       }
+    }
+  });
+  db.collection('bolao').doc('lideres').onSnapshot(snap=>{
+    if(snap.exists){
+      lideresGravados=JSON.parse(snap.data().data||'{}');
+      renderRanking();
     }
   });
 });
