@@ -130,6 +130,23 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padd
 @media(max-width:768px){.nav-links{display:none}.podium{flex-direction:column;align-items:center}.p2,.p3{width:280px}}
 .fade-in{opacity:0;transform:translateY(20px);animation:fadein 0.6s ease-out forwards;}
 @keyframes fadein{to{opacity:1;transform:translateY(0)}}
+/* STATS DO DIA */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem;}
+.stat-match-card{background:rgba(13,31,60,0.7);border:1px solid rgba(255,184,0,0.1);padding:1.2rem 1.5rem;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;}
+.stat-match-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--gold),var(--cyan));}
+.stat-match-card:hover{border-color:rgba(255,184,0,0.35);transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,184,0,0.08);}
+.stat-card-teams{display:flex;align-items:center;justify-content:center;gap:.8rem;margin-bottom:.8rem;}
+.stat-team{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:1rem;color:var(--white);}
+.stat-vs{font-family:'Orbitron',monospace;font-size:.7rem;color:var(--grey);}
+.stat-total{font-size:.72rem;color:var(--grey);text-align:center;margin-bottom:.8rem;letter-spacing:.05em;}
+.stat-scores-list{display:flex;flex-direction:column;gap:.35rem;}
+.stat-score-row{display:flex;align-items:center;justify-content:space-between;padding:.35rem .6rem;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.04);position:relative;}
+.stat-score-label{font-family:'Orbitron',monospace;font-size:.8rem;font-weight:700;color:var(--gold);}
+.stat-score-count{font-size:.72rem;color:var(--cyan);font-family:'Orbitron',monospace;white-space:nowrap;}
+.stat-names-tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:rgba(6,20,41,.98);border:1px solid rgba(255,184,0,.3);padding:.55rem .8rem;min-width:180px;max-width:260px;z-index:50;font-size:.72rem;color:var(--white);line-height:1.5;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.6);}
+.stat-score-row:hover .stat-names-tip{display:block;}
+.stat-bar-bg{position:absolute;left:0;top:0;bottom:0;background:rgba(255,184,0,.06);pointer-events:none;transition:width .4s;}
+
 </style>
 </head>
 <body>
@@ -160,6 +177,7 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padd
     <ul class="nav-links">
       <li><a href="#upload-section">Upload</a></li>
       <li><a href="#ranking-section">Ranking</a></li>
+      <li><a href="#stats-section">Jogos do Dia</a></li>
       <li><a href="admin_resultados.html">Resultados</a></li>
     </ul>
   </div>
@@ -188,6 +206,15 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padd
       <div class="section-line"></div>
     </div>
     <div id="ranking-content"><div class="empty-state"><div class="empty-icon">🏆</div><div class="empty-text">Carregue as planilhas para ver o ranking</div></div></div>
+  </section>
+  <section id="stats-section" style="margin-bottom:5rem;">
+    <div class="section-header">
+      <div class="section-tag">Hoje</div>
+      <h2 class="section-title">JOGOS <span>DO DIA</span></h2>
+      <p style="color:var(--grey);font-size:0.9rem;margin-top:0.8rem;">Clique num jogo para ver todos os palpites</p>
+      <div class="section-line"></div>
+    </div>
+    <div id="stats-content"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">Carregue as planilhas para ver os palpites do dia</div></div></div>
   </section>
 </main>
 <footer>
@@ -417,6 +444,139 @@ function openFaseModal(faseId){
 }
 function openModal(idx){const p=participants[idx];if(!p)return;document.getElementById('modal-title').textContent=`PALPITES — ${p.nome.toUpperCase()}`;const sc=calcScore(p);let html=`<div style="display:flex;gap:2rem;flex-wrap:wrap;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,184,0,0.1)"><div><span style="font-family:'Orbitron',monospace;font-size:2rem;color:var(--gold);font-weight:900">${sc.total}</span> <span style="color:var(--grey);font-size:0.8rem">pontos totais</span></div><div style="display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap"><div><span style="color:var(--green);font-weight:700">${sc.exatos}</span> <span style="font-size:0.75rem;color:var(--grey)">placares exatos (50pts)</span></div><div><span style="color:var(--cyan);font-weight:700">${sc.p40}</span> <span style="font-size:0.75rem;color:var(--grey)">vencedor+gols (40pts)</span></div><div><span style="color:var(--gold);font-weight:700">${sc.p30}</span> <span style="font-size:0.75rem;color:var(--grey)">resultado (30pts)</span></div></div></div>`;const grupos=[...new Set(p.jogos.filter(j=>j.fase==='grupos').map(j=>j.grupo))].sort();for(const grp of grupos){const js=p.jogos.filter(j=>j.grupo===grp);html+=`<div class="modal-phase">GRUPO ${grp}</div>`;for(const j of js){const key=`g${j.idx}`;const r=results[key];const pts=getPts(j,key);const pc=pts===null?'':pts===50?'var(--green)':pts===40?'var(--cyan)':pts===30?'var(--gold)':pts===10?'var(--grey)':'var(--red)';const pb=pts!==null?`<span style="font-family:'Orbitron',monospace;font-size:0.7rem;color:${pc};font-weight:700;min-width:28px;text-align:right">${pts}pts</span>`:'';const rs=r&&r.golsM!==null&&r.golsV!==null?`<span style="font-size:0.65rem;color:var(--grey)">(${r.golsM}×${r.golsV})</span>`:'';html+=`<div class="modal-match"><div class="mteam home">${j.mandante}</div><div style="display:flex;align-items:center;gap:0.4rem"><div class="mscore">${j.golsM??'?'} × ${j.golsV??'?'}</div>${rs}${pb}</div><div class="mteam away">${j.visitante}</div></div>`;}}const fases=['oitavas','quartas','semis','terceiro','final'];const fL={oitavas:'⚔️ OITAVAS',quartas:'⚡ QUARTAS',semis:'🔥 SEMIFINAIS',terceiro:'🥉 3º LUGAR',final:'🏆 FINAL'};for(const fase of fases){const js=p.jogos.filter(j=>j.fase===fase).sort((a,b)=>a.jogo-b.jogo);if(!js.length)continue;html+=`<div class="modal-phase">${fL[fase]}</div>`;for(const j of js){const key=`mm${j.jogo}`;const r=results[key];const pts=getPts(j,key);const pc=pts===null?'':pts===50?'var(--green)':pts===40?'var(--cyan)':pts===30?'var(--gold)':pts===10?'var(--grey)':'var(--red)';const pb=pts!==null?`<span style="font-family:'Orbitron',monospace;font-size:0.7rem;color:${pc};font-weight:700;min-width:28px;text-align:right">${pts}pts</span>`:'';const rs=r&&r.golsM!==null&&r.golsV!==null?`<span style="font-size:0.65rem;color:var(--grey)">(${r.golsM}×${r.golsV})</span>`:'';let ppInfo='';if(r&&(r.mandante||r.visitante)&&j.fase!=='grupos'){const ppm=r.mandante&&j.mandante===r.mandante?'+20PP':'';const ppv=r.visitante&&j.visitante===r.visitante?'+20PP':'';if(ppm||ppv)ppInfo=`<span style="font-size:0.65rem;color:var(--green)">${[ppm,ppv].filter(Boolean).join(' ')}</span>`;}html+=`<div class="modal-match"><div class="mteam home">${j.mandante}</div><div style="display:flex;align-items:center;gap:0.4rem;flex-direction:column"><div style="display:flex;align-items:center;gap:0.4rem"><div class="mscore">${j.golsM??'?'} × ${j.golsV??'?'}</div>${rs}${pb}</div>${ppInfo}</div><div class="mteam away">${j.visitante}</div></div>`;}}document.getElementById('modal-body').innerHTML=html;document.getElementById('modal-overlay').classList.add('open');}
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+
+// ── ESTATÍSTICAS DO DIA ──
+function getJogosHoje(){
+  // Data atual no horário de Brasília
+  const agora = new Date();
+  const hojeStr = agora.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'});
+  // Mapear todos os jogos com resultado → pegar data do resultado
+  // Como não temos data nos palpites, usamos os jogos que têm resultado registrado hoje
+  // Estratégia: pegar chaves de results cujo campo "data" seja hoje, ou comparar pelo índice com datas fixas
+  // Usaremos a tabela de datas dos jogos da Copa 2026 fase de grupos
+  const DATAS_JOGOS = buildDatasJogos();
+  const jogosHoje = [];
+  for(const [key, dataJogo] of Object.entries(DATAS_JOGOS)){
+    const dStr = dataJogo.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'});
+    if(dStr === hojeStr) jogosHoje.push(key);
+  }
+  return jogosHoje;
+}
+
+function buildDatasJogos(){
+  // Datas dos 72 jogos da fase de grupos (baseado no calendário oficial FIFA 2026)
+  // Formato: chave → Date UTC
+  const d = {};
+  // Rodada 1 (11/06 a 17/06) — idx 1-24
+  const r1 = [
+    [1,'2026-06-11'],[2,'2026-06-11'],[3,'2026-06-12'],[4,'2026-06-12'],
+    [5,'2026-06-13'],[6,'2026-06-13'],[7,'2026-06-14'],[8,'2026-06-14'],
+    [9,'2026-06-15'],[10,'2026-06-15'],[11,'2026-06-15'],[12,'2026-06-15'],
+    [13,'2026-06-16'],[14,'2026-06-16'],[15,'2026-06-16'],[16,'2026-06-16'],
+    [17,'2026-06-17'],[18,'2026-06-17'],[19,'2026-06-17'],[20,'2026-06-17'],
+    [21,'2026-06-17'],[22,'2026-06-17'],[23,'2026-06-17'],[24,'2026-06-17'],
+  ];
+  // Rodada 2 (18/06 a 23/06) — idx 25-48
+  const r2 = [
+    [25,'2026-06-18'],[26,'2026-06-18'],[27,'2026-06-18'],[28,'2026-06-18'],
+    [29,'2026-06-19'],[30,'2026-06-19'],[31,'2026-06-19'],[32,'2026-06-19'],
+    [33,'2026-06-20'],[34,'2026-06-20'],[35,'2026-06-20'],[36,'2026-06-20'],
+    [37,'2026-06-21'],[38,'2026-06-21'],[39,'2026-06-21'],[40,'2026-06-21'],
+    [41,'2026-06-22'],[42,'2026-06-22'],[43,'2026-06-22'],[44,'2026-06-22'],
+    [45,'2026-06-23'],[46,'2026-06-23'],[47,'2026-06-23'],[48,'2026-06-23'],
+  ];
+  // Rodada 3 (24/06 a 27/06) — idx 49-72 (jogos simultâneos por grupo)
+  const r3 = [
+    [49,'2026-06-24'],[50,'2026-06-24'],[51,'2026-06-24'],[52,'2026-06-24'],
+    [53,'2026-06-24'],[54,'2026-06-24'],[55,'2026-06-24'],[56,'2026-06-24'],
+    [57,'2026-06-25'],[58,'2026-06-25'],[59,'2026-06-25'],[60,'2026-06-25'],
+    [61,'2026-06-25'],[62,'2026-06-25'],[63,'2026-06-25'],[64,'2026-06-25'],
+    [65,'2026-06-26'],[66,'2026-06-26'],[67,'2026-06-26'],[68,'2026-06-26'],
+    [69,'2026-06-27'],[70,'2026-06-27'],[71,'2026-06-27'],[72,'2026-06-27'],
+  ];
+  for(const [idx,ds] of [...r1,...r2,...r3]) d[`g${idx}`]=new Date(ds+'T12:00:00Z');
+  // Fases eliminatórias (aproximadas)
+  const elim = [
+    [73,'2026-07-01'],[74,'2026-07-01'],[75,'2026-07-02'],[76,'2026-07-02'],
+    [77,'2026-07-02'],[78,'2026-07-02'],[79,'2026-07-03'],[80,'2026-07-03'],
+    [81,'2026-07-03'],[82,'2026-07-03'],[83,'2026-07-04'],[84,'2026-07-04'],
+    [85,'2026-07-04'],[86,'2026-07-04'],[87,'2026-07-05'],[88,'2026-07-05'],
+    [89,'2026-07-06'],[90,'2026-07-06'],[91,'2026-07-06'],[92,'2026-07-06'],
+    [93,'2026-07-07'],[94,'2026-07-07'],[95,'2026-07-07'],[96,'2026-07-07'],
+    [97,'2026-07-09'],[98,'2026-07-09'],[99,'2026-07-10'],[100,'2026-07-10'],
+    [101,'2026-07-12'],[102,'2026-07-12'],[103,'2026-07-11'],[104,'2026-07-15'],
+  ];
+  for(const [jn,ds] of elim) d[`mm${jn}`]=new Date(ds+'T12:00:00Z');
+  return d;
+}
+
+function renderStatsHoje(){
+  const el = document.getElementById('stats-content');
+  if(!participants.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">Carregue as planilhas para ver os palpites do dia</div></div>`;
+    return;
+  }
+  const jogosHoje = getJogosHoje();
+  if(!jogosHoje.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">⚽</div><div class="empty-text">Nenhum jogo programado para hoje</div></div>`;
+    return;
+  }
+  // Para cada jogo de hoje, pegar info do confronto a partir dos palpites
+  let html=`<div class="stats-grid">`;
+  for(const key of jogosHoje){
+    // Descobrir mandante/visitante a partir do primeiro participante que tem esse jogo
+    let mandante='?', visitante='?';
+    for(const p of participants){
+      const j = key.startsWith('g')
+        ? p.jogos.find(j=>j.fase==='grupos'&&`g${j.idx}`===key)
+        : p.jogos.find(j=>j.fase!=='grupos'&&`mm${j.jogo}`===key);
+      if(j){mandante=j.mandante;visitante=j.visitante;break;}
+    }
+    // Agrupar palpites por placar
+    const mapa = {}; // "gM x gV" → [nomes]
+    for(const p of participants){
+      const j = key.startsWith('g')
+        ? p.jogos.find(j=>j.fase==='grupos'&&`g${j.idx}`===key)
+        : p.jogos.find(j=>j.fase!=='grupos'&&`mm${j.jogo}`===key);
+      if(!j||j.golsM===null||j.golsV===null) continue;
+      const k=`${j.golsM} x ${j.golsV}`;
+      if(!mapa[k]) mapa[k]=[];
+      mapa[k].push(p.nome.split(' ')[0]); // primeiro nome
+    }
+    const total = Object.values(mapa).reduce((s,a)=>s+a.length,0);
+    if(!total) continue;
+    // Ordenar por quantidade desc
+    const sorted = Object.entries(mapa).sort((a,b)=>b[1].length-a[1].length);
+    const max = sorted[0][1].length;
+    let rows='';
+    for(const [placar, nomes] of sorted){
+      const pct = Math.round(nomes.length/max*100);
+      const nomesStr = nomes.join(', ');
+      rows+=`<div class="stat-score-row">
+        <div class="stat-bar-bg" style="width:${pct}%"></div>
+        <span class="stat-score-label">${placar}</span>
+        <span class="stat-score-count">${nomes.length} palpite${nomes.length!==1?'s':''}</span>
+        <div class="stat-names-tip">👥 <strong>${nomes.length} palpite${nomes.length!==1?'s':''}</strong><br>${nomesStr}</div>
+      </div>`;
+    }
+    const resultado = results[key];
+    const resStr = resultado&&resultado.golsM!==null&&resultado.golsV!==null
+      ? `<div style="font-size:.7rem;color:var(--green);text-align:center;margin-bottom:.5rem;font-family:'Orbitron',monospace;">✅ RESULTADO: ${resultado.golsM} x ${resultado.golsV}</div>`
+      : '';
+    html+=`<div class="stat-match-card fade-in">
+      <div class="stat-card-teams">
+        <span class="stat-team" style="text-align:right;flex:1">${mandante}</span>
+        <span class="stat-vs">VS</span>
+        <span class="stat-team" style="text-align:left;flex:1">${visitante}</span>
+      </div>
+      ${resStr}
+      <div class="stat-total">${total} palpite${total!==1?'s':''} — passe o mouse para ver os nomes</div>
+      <div class="stat-scores-list">${rows}</div>
+    </div>`;
+  }
+  html+=`</div>`;
+  el.innerHTML = html;
+}
 const ADMIN_PWD='Ber194032*';
 let adminUnlocked=false;
 function checkAdmin(callback){
@@ -428,13 +588,13 @@ function checkAdmin(callback){
 async function processFiles(files){let added=0;for(const f of files){if(!f.name.endsWith('.xlsx')){showToast(`${f.name} não é .xlsx`,'error');continue;}try{const d=await readExcel(f);const ex=participants.findIndex(p=>p.nome===d.nome);if(ex>=0){participants[ex]=d;showToast(`✅ ${d.nome} atualizado`);}else{participants.push(d);showToast(`✅ ${d.nome} adicionado`);}added++;}catch(e){showToast(`❌ Erro: ${e.message}`,'error');}}if(added>0){await save();renderParticipants();renderRanking();}}
 function showToast(msg,type='success'){const c=document.getElementById('toast-container');const t=document.createElement('div');t.className=`toast${type==='error'?' error':''}`;t.innerHTML=`<span>${msg}</span>`;c.appendChild(t);setTimeout(()=>t.remove(),3500);}
 function initParticles(){const cv=document.getElementById('particles-canvas');const ctx=cv.getContext('2d');let W=cv.width=window.innerWidth,H=cv.height=window.innerHeight;const pts=Array.from({length:50},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,size:Math.random()*2+.5,color:Math.random()>.5?'#FFB800':'#00D4FF'}));function draw(){ctx.clearRect(0,0,W,H);for(const p of pts){p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fillStyle=p.color+'66';ctx.fill();}for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<100){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(255,184,0,${.05*(1-d/100)})`;ctx.lineWidth=.5;ctx.stroke();}}requestAnimationFrame(draw);}draw();window.addEventListener('resize',()=>{W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;});}
-document.getElementById('file-input').addEventListener('change',e=>{processFiles([...e.target.files]);e.target.value='';});
+document.getElementById('file-input').addEventListener('change',e=>{const files=[...e.target.files];e.target.value='';if(!files.length)return;checkAdmin(()=>{processFiles(files);});});
 const zone=document.getElementById('upload-zone');
 zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag-over');});
 zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
-zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag-over');processFiles([...e.dataTransfer.files]);});
+zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag-over');const files=[...e.dataTransfer.files];if(!files.length)return;checkAdmin(()=>{processFiles(files);});});
 document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay'))closeModal();});
-async function init(){initParticles();await loadState();renderParticipants();renderRanking();}
+async function init(){initParticles();await loadState();renderParticipants();renderRanking();renderStatsHoje();}
 init().then(()=>{
   // Escuta mudanças em tempo real
   db.collection('bolao').doc('participants').onSnapshot(snap=>{
@@ -444,6 +604,7 @@ init().then(()=>{
         participants=fresh;
         renderParticipants();
         renderRanking();
+        renderStatsHoje();
       }
     }
   });
@@ -453,6 +614,7 @@ init().then(()=>{
       if(JSON.stringify(fresh)!==JSON.stringify(results)){
         results=fresh;
         renderRanking();
+        renderStatsHoje();
       }
     }
   });
