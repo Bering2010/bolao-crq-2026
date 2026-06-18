@@ -146,39 +146,6 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padd
 .stat-names-tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:rgba(6,20,41,.98);border:1px solid rgba(255,184,0,.3);padding:.55rem .8rem;min-width:180px;max-width:260px;z-index:50;font-size:.72rem;color:var(--white);line-height:1.5;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.6);}
 .stat-score-row:hover .stat-names-tip{display:block;}
 .stat-bar-bg{position:absolute;left:0;top:0;bottom:0;background:rgba(255,184,0,.06);pointer-events:none;transition:width .4s;}
-/* DASHBOARD DESTAQUES */
-.dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:1.2rem;}
-.dash-card{background:rgba(13,31,60,.65);border:1px solid rgba(255,184,0,.1);padding:1.4rem 1.5rem;position:relative;overflow:hidden;transition:all .3s;}
-.dash-card:hover{border-color:rgba(255,184,0,.3);transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.3);}
-.dash-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
-.dash-card.c-gold::before{background:linear-gradient(180deg,var(--gold),#FF8C00);}
-.dash-card.c-cyan::before{background:linear-gradient(180deg,var(--cyan),#0080ff);}
-.dash-card.c-green::before{background:linear-gradient(180deg,var(--green),#00a060);}
-.dash-card.c-red::before{background:linear-gradient(180deg,var(--red),#a00000);}
-.dash-icon{font-size:1.6rem;margin-bottom:.6rem;display:block;}
-.dash-label{font-family:'Orbitron',monospace;font-size:.62rem;letter-spacing:.12em;color:var(--grey);text-transform:uppercase;margin-bottom:.7rem;}
-.dash-names{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:1.15rem;color:var(--white);line-height:1.3;margin-bottom:.3rem;}
-.dash-names .multi{font-size:.95rem;}
-.dash-value{font-family:'Orbitron',monospace;font-weight:900;font-size:1.5rem;}
-.dash-sub{font-size:.72rem;color:var(--grey);margin-top:.3rem;}
-.dash-empty{color:var(--grey);font-size:.85rem;font-style:italic;}
-
-/* DASHBOARD DESTAQUES */
-.dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;}
-.dash-card{background:rgba(13,31,60,0.7);border:1px solid rgba(255,184,0,0.1);padding:1.5rem;position:relative;overflow:hidden;transition:all .3s;}
-.dash-card:hover{border-color:rgba(255,184,0,0.3);transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.3);}
-.dash-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
-.dash-card.c-gold::before{background:linear-gradient(90deg,var(--gold),#FF8C00);}
-.dash-card.c-green::before{background:linear-gradient(90deg,var(--green),#0a8a5f);}
-.dash-card.c-red::before{background:linear-gradient(90deg,var(--red),#8a0a2a);}
-.dash-card.c-cyan::before{background:linear-gradient(90deg,var(--cyan),#0a6a8a);}
-.dash-icon{font-size:1.8rem;margin-bottom:.6rem;display:block;}
-.dash-label{font-family:'Orbitron',monospace;font-size:.65rem;letter-spacing:.12em;color:var(--grey);text-transform:uppercase;margin-bottom:.6rem;}
-.dash-main{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:1.15rem;color:var(--white);margin-bottom:.3rem;line-height:1.3;}
-.dash-sub{font-size:.78rem;color:var(--grey);line-height:1.5;}
-.dash-value{font-family:'Orbitron',monospace;font-weight:900;color:var(--gold);}
-.dash-names{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.6rem;}
-.dash-name-chip{background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.25);color:var(--gold);font-size:.72rem;padding:.2rem .6rem;border-radius:20px;font-family:'Rajdhani',sans-serif;font-weight:600;}
 
 </style>
 </head>
@@ -210,7 +177,7 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padd
     <ul class="nav-links">
       <li><a href="#upload-section">Upload</a></li>
       <li><a href="#ranking-section">Ranking</a></li>
-      <li><a href="#stats-section">Estatísticas</a></li>
+      <li><a href="#stats-section">Jogos do Dia</a></li>
       <li><a href="admin_resultados.html">Resultados</a></li>
     </ul>
   </div>
@@ -242,22 +209,12 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padd
   </section>
   <section id="stats-section" style="margin-bottom:5rem;">
     <div class="section-header">
-      <div class="section-tag">Análises</div>
-      <h2 class="section-title">ESTATÍSTICAS <span>DO BOLÃO</span></h2>
+      <div class="section-tag">Hoje</div>
+      <h2 class="section-title">JOGOS <span>DO DIA</span></h2>
+      <p style="color:var(--grey);font-size:0.9rem;margin-top:0.8rem;">Clique num jogo para ver todos os palpites</p>
       <div class="section-line"></div>
     </div>
-
-    <div style="margin-bottom:2.5rem;">
-      <h3 style="font-family:'Orbitron',monospace;font-size:1rem;color:var(--cyan);letter-spacing:.1em;margin-bottom:.4rem;">📅 JOGOS DO DIA</h3>
-      <p style="color:var(--grey);font-size:0.85rem;margin-bottom:1.2rem;">Passe o mouse num placar para ver os nomes dos palpiteiros</p>
-      <div id="stats-content"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">Carregue as planilhas para ver os palpites do dia</div></div></div>
-    </div>
-
-    <div>
-      <h3 style="font-family:'Orbitron',monospace;font-size:1rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.4rem;">📊 DESTAQUES DO BOLÃO</h3>
-      <p style="color:var(--grey);font-size:0.85rem;margin-bottom:1.2rem;">Indicadores gerais com todos os jogos já resultados</p>
-      <div id="dashboard-content"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Carregue as planilhas para ver os destaques</div></div></div>
-    </div>
+    <div id="stats-content"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">Carregue as planilhas para ver os palpites do dia</div></div></div>
   </section>
 </main>
 <footer>
@@ -317,30 +274,24 @@ const FASES_PREMIADAS = [
   },
   {
     id:'r16', label:'16 Avos de Final',
-    filter: j => j.fase==='dezesseis',
+    filter: j => j.fase==='oitavas',
     // Último jogo: mm88, 03/07 — jogo mais tarde ~23:30 Brasília, fecha 3h depois = 02:30 04/07
     ultimoKey: 'mm88',
     fechaApos: new Date('2026-07-04T02:30:00-03:00')
   },
   {
     id:'r8', label:'Oitavas de Final',
-    filter: j => j.fase==='oitavasReal',
+    filter: j => j.fase==='quartas',
     // Último jogo: mm96, 07/07 — ~23:00 Brasília, fecha = 02:00 08/07
     ultimoKey: 'mm96',
     fechaApos: new Date('2026-07-08T02:00:00-03:00')
   },
   {
     id:'r4', label:'Quartas de Final',
-    filter: j => j.fase==='quartasReal',
+    filter: j => j.fase==='semis' || j.fase==='terceiro',
     // Último jogo: mm100, 11/07 — ~22:00 Brasília (21:00 ET), fecha = 01:00 12/07
     ultimoKey: 'mm100',
     fechaApos: new Date('2026-07-12T01:00:00-03:00')
-  },
-  {
-    id:'r2f', label:'Semifinais',
-    filter: j => j.fase==='semisReal',
-    ultimoKey: 'mm102',
-    fechaApos: new Date('2026-07-16T01:00:00-03:00')
   },
 ];
 
@@ -377,13 +328,11 @@ async function loadState(){
   }catch(e){console.error('Erro ao carregar:',e);}
 }
 function initials(nome){const p=nome.trim().split(' ').filter(Boolean);return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():p[0]?.[0]?.toUpperCase()||'?';}
-function readExcel(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'binary'});const ps=wb.Sheets['PDF Palpites'];const nome=ps?(XLSX.utils.sheet_to_json(ps,{header:1})[1]?.[2]||file.name):file.name;const email=ps?(XLSX.utils.sheet_to_json(ps,{header:1})[2]?.[5]||''):'';const sheet=wb.Sheets['Meus Pontos'];if(!sheet){rej(new Error('Aba "Meus Pontos" não encontrada'));return;}const data=XLSX.utils.sheet_to_json(sheet,{header:1,defval:null});const jogos=[];for(let i=6;i<=77;i++){const row=data[i];if(!row)continue;const grupo=row[4],mand=row[5],visit=row[7],gM=row[8],gV=row[10];if(!mand||!visit)continue;jogos.push({idx:i-6+1,grupo:String(grupo||'?'),mandante:String(mand).trim(),visitante:String(visit).trim(),golsM:gM!==null?Number(gM):null,golsV:gV!==null?Number(gV):null,fase:'grupos',jogo:null});}for(let i=80;i<=121;i++){const row=data[i];if(!row)continue;const jn=row[4],mand=row[5],visit=row[7],gM=row[8],gV=row[10];if(!jn||isNaN(Number(jn))||!mand||!visit)continue;const num=Number(jn);let fase='dezesseis';if(num>=89&&num<=96)fase='oitavasReal';else if(num>=97&&num<=100)fase='quartasReal';else if(num===101||num===102)fase='semisReal';else if(num===103)fase='terceiro';else if(num===104)fase='final';jogos.push({idx:null,jogo:num,grupo:null,mandante:String(mand).trim(),visitante:String(visit).trim(),golsM:gM!==null?Number(gM):null,golsV:gV!==null?Number(gV):null,fase});}res({nome:String(nome).trim(),email:String(email).trim(),jogos});}catch(err){rej(err);}};r.onerror=()=>rej(new Error('Falha ao ler'));r.readAsBinaryString(file);});}
+function readExcel(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'binary'});const ps=wb.Sheets['PDF Palpites'];const nome=ps?(XLSX.utils.sheet_to_json(ps,{header:1})[1]?.[2]||file.name):file.name;const email=ps?(XLSX.utils.sheet_to_json(ps,{header:1})[2]?.[5]||''):'';const sheet=wb.Sheets['Meus Pontos'];if(!sheet){rej(new Error('Aba "Meus Pontos" não encontrada'));return;}const data=XLSX.utils.sheet_to_json(sheet,{header:1,defval:null});const jogos=[];for(let i=6;i<=77;i++){const row=data[i];if(!row)continue;const grupo=row[4],mand=row[5],visit=row[7],gM=row[8],gV=row[10];if(!mand||!visit)continue;jogos.push({idx:i-6+1,grupo:String(grupo||'?'),mandante:String(mand).trim(),visitante:String(visit).trim(),golsM:gM!==null?Number(gM):null,golsV:gV!==null?Number(gV):null,fase:'grupos',jogo:null});}for(let i=80;i<=121;i++){const row=data[i];if(!row)continue;const jn=row[4],mand=row[5],visit=row[7],gM=row[8],gV=row[10];if(!jn||isNaN(Number(jn))||!mand||!visit)continue;const num=Number(jn);let fase='oitavas';if(num>=89&&num<=96)fase='quartas';else if(num>=97&&num<=100)fase='semis';else if(num===101||num===102)fase='semis';else if(num===103)fase='terceiro';else if(num===104)fase='final';jogos.push({idx:null,jogo:num,grupo:null,mandante:String(mand).trim(),visitante:String(visit).trim(),golsM:gM!==null?Number(gM):null,golsV:gV!==null?Number(gV):null,fase});}res({nome:String(nome).trim(),email:String(email).trim(),jogos});}catch(err){rej(err);}};r.onerror=()=>rej(new Error('Falha ao ler'));r.readAsBinaryString(file);});}
 function calcScoreFiltered(p, filterFn){
-  let total=0,exatos=0,p40=0,p30=0,p10=0,p0=0,avaliados=0;
+  let total=0,exatos=0,p40=0,p30=0;
   const jogos = filterFn ? p.jogos.filter(filterFn) : p.jogos;
-  for(const j of jogos){const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;const res=results[key];if(!res||res.golsM===null||res.golsV===null)continue;if(j.golsM===null||j.golsV===null)continue;avaliados++;const pM=j.golsM,pV=j.golsV,rM=Number(res.golsM),rV=Number(res.golsV);if(pM===rM&&pV===rV){total+=PTS.EXATO;exatos++;}else{const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E',ok=rv===pv,aM=pM===rM,aV=pV===rV;if(ok&&(aM||aV)){total+=PTS.VENC_GOL;p40++;}else if(ok){total+=PTS.RESULTADO;p30++;}else if(aM||aV){total+=PTS.GOL_UM;p10++;}else{p0++;}}if(j.fase!=='grupos'){if(res.mandante&&j.mandante===res.mandante)total+=PTS.PP;if(res.visitante&&j.visitante===res.visitante)total+=PTS.PP;}}
-  const pct=n=>avaliados>0?Math.round(n/avaliados*100):0;
-  return{total,exatos,p40,p30,p10,p0,avaliados,pctExatos:pct(exatos),pctP40:pct(p40),pctP30:pct(p30),pctP10:pct(p10),pctP0:pct(p0)};}
+  for(const j of jogos){const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;const res=results[key];if(!res||res.golsM===null||res.golsV===null)continue;if(j.golsM===null||j.golsV===null)continue;const pM=j.golsM,pV=j.golsV,rM=Number(res.golsM),rV=Number(res.golsV);if(pM===rM&&pV===rV){total+=PTS.EXATO;exatos++;}else{const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E',ok=rv===pv,aM=pM===rM,aV=pV===rV;if(ok&&(aM||aV)){total+=PTS.VENC_GOL;p40++;}else if(ok){total+=PTS.RESULTADO;p30++;}else if(aM||aV){total+=PTS.GOL_UM;}}if(j.fase!=='grupos'){if(res.mandante&&j.mandante===res.mandante)total+=PTS.PP;if(res.visitante&&j.visitante===res.visitante)total+=PTS.PP;}}return{total,exatos,p40,p30};}
 function calcScore(p){ return calcScoreFiltered(p, null); }
 function calcScorePhase(p, filterFn){ return calcScoreFiltered(p, filterFn); }
 function getPts(j,key){const r=results[key];if(!r||r.golsM===null||r.golsV===null||j.golsM===null||j.golsV===null)return null;const pM=j.golsM,pV=j.golsV,rM=Number(r.golsM),rV=Number(r.golsV);if(pM===rM&&pV===rV)return 50;const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E';if(rv===pv&&(pM===rM||pV===rV))return 40;if(rv===pv)return 30;if(pM===rM||pV===rV)return 10;return 0;}
@@ -394,7 +343,7 @@ function renderRanking(){const el=document.getElementById('ranking-content');if(
     if(b.score.exatos!==a.score.exatos) return b.score.exatos-a.score.exatos;
     if(b.score.p40!==a.score.p40) return b.score.p40-a.score.p40;
     return b.score.p30-a.score.p30;
-  });const max=scored[0]?.score.total||1;document.getElementById('stat-l').textContent=max;const podHTML=`<div class="podium">${scored[1]?`<div class="podium-card p2 fade-in" style="animation-delay:0.15s" onclick="openModal(${scored[1].i})"><div class="podium-avatar">${initials(scored[1].nome)}<div class="podium-pos">2</div></div><div class="podium-name">${scored[1].nome}</div><span class="podium-score">${scored[1].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[1].score.exatos}×50</span><span class="badge">🎯${scored[1].score.p40}×40</span></div></div>`:''}${scored[0]?`<div class="podium-card p1 fade-in" style="animation-delay:0.05s" onclick="openModal(${scored[0].i})"><span class="podium-crown">👑</span><div class="podium-avatar">${initials(scored[0].nome)}<div class="podium-pos">1</div></div><div class="podium-name">${scored[0].nome}</div><span class="podium-score">${scored[0].score.total}</span><div class="podium-label">pontos · LÍDER</div><div class="podium-badges"><span class="badge">⚽${scored[0].score.exatos}×50</span><span class="badge">🎯${scored[0].score.p40}×40</span><span class="badge">✅${scored[0].score.p30}×30</span></div></div>`:''} ${scored[2]?`<div class="podium-card p3 fade-in" style="animation-delay:0.25s" onclick="openModal(${scored[2].i})"><div class="podium-avatar">${initials(scored[2].nome)}<div class="podium-pos">3</div></div><div class="podium-name">${scored[2].nome}</div><span class="podium-score">${scored[2].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[2].score.exatos}×50</span><span class="badge">🎯${scored[2].score.p40}×40</span></div></div>`:''}</div>`;const tableHTML=`<div class="rank-table-wrap fade-in" style="animation-delay:0.3s"><table class="rank-table"><thead><tr><th>#</th><th>Palpiteiro</th><th style="text-align:right">Pontos</th><th style="text-align:center">50pts</th><th style="text-align:center">40pts</th><th style="text-align:center">30pts</th><th style="text-align:center">10pts</th><th style="text-align:center">0pts</th><th>Progresso</th></tr></thead><tbody>${scored.map((p,rank)=>`<tr onclick="openModal(${p.i})" style="cursor:pointer"><td><div class="rpos ${rank===0?'t1':rank===1?'t2':rank===2?'t3':''}">${rank+1}º</div></td><td><div class="rname-col"><div class="ravatar">${initials(p.nome)}</div><div><div class="rname">${p.nome}</div><div style="font-size:0.7rem;color:var(--grey)">${p.email||'—'}</div></div></div></td><td class="rscore">${p.score.total}</td><td style="text-align:center;color:var(--green);font-size:0.75rem">${p.score.exatos}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctExatos}%</span></td><td style="text-align:center;color:var(--cyan);font-size:0.75rem">${p.score.p40}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP40}%</span></td><td style="text-align:center;color:var(--gold);font-size:0.75rem">${p.score.p30}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP30}%</span></td><td style="text-align:center;color:#999;font-size:0.75rem">${p.score.p10}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP10}%</span></td><td style="text-align:center;color:var(--red);font-size:0.75rem">${p.score.p0}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP0}%</span></td><td><div class="rbar-wrap"><div class="rbar" style="width:${max>0?Math.round(p.score.total/max*100):0}%"></div></div></td></tr>`).join('')}</tbody></table></div>`;el.innerHTML=podHTML+tableHTML+renderLideres();}
+  });const max=scored[0]?.score.total||1;document.getElementById('stat-l').textContent=max;const podHTML=`<div class="podium">${scored[1]?`<div class="podium-card p2 fade-in" style="animation-delay:0.15s" onclick="openModal(${scored[1].i})"><div class="podium-avatar">${initials(scored[1].nome)}<div class="podium-pos">2</div></div><div class="podium-name">${scored[1].nome}</div><span class="podium-score">${scored[1].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[1].score.exatos}×50</span><span class="badge">🎯${scored[1].score.p40}×40</span></div></div>`:''}${scored[0]?`<div class="podium-card p1 fade-in" style="animation-delay:0.05s" onclick="openModal(${scored[0].i})"><span class="podium-crown">👑</span><div class="podium-avatar">${initials(scored[0].nome)}<div class="podium-pos">1</div></div><div class="podium-name">${scored[0].nome}</div><span class="podium-score">${scored[0].score.total}</span><div class="podium-label">pontos · LÍDER</div><div class="podium-badges"><span class="badge">⚽${scored[0].score.exatos}×50</span><span class="badge">🎯${scored[0].score.p40}×40</span><span class="badge">✅${scored[0].score.p30}×30</span></div></div>`:''} ${scored[2]?`<div class="podium-card p3 fade-in" style="animation-delay:0.25s" onclick="openModal(${scored[2].i})"><div class="podium-avatar">${initials(scored[2].nome)}<div class="podium-pos">3</div></div><div class="podium-name">${scored[2].nome}</div><span class="podium-score">${scored[2].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[2].score.exatos}×50</span><span class="badge">🎯${scored[2].score.p40}×40</span></div></div>`:''}</div>`;const tableHTML=`<div class="rank-table-wrap fade-in" style="animation-delay:0.3s"><table class="rank-table"><thead><tr><th>#</th><th>Palpiteiro</th><th style="text-align:right">Pontos</th><th style="text-align:center">Exatos</th><th style="text-align:center">×40</th><th style="text-align:center">×30</th><th>Progresso</th></tr></thead><tbody>${scored.map((p,rank)=>`<tr onclick="openModal(${p.i})" style="cursor:pointer"><td><div class="rpos ${rank===0?'t1':rank===1?'t2':rank===2?'t3':''}">${rank+1}º</div></td><td><div class="rname-col"><div class="ravatar">${initials(p.nome)}</div><div><div class="rname">${p.nome}</div><div style="font-size:0.7rem;color:var(--grey)">${p.email||'—'}</div></div></div></td><td class="rscore">${p.score.total}</td><td style="text-align:center;color:var(--grey)">${p.score.exatos}</td><td style="text-align:center;color:var(--grey)">${p.score.p40}</td><td style="text-align:center;color:var(--grey)">${p.score.p30}</td><td><div class="rbar-wrap"><div class="rbar" style="width:${max>0?Math.round(p.score.total/max*100):0}%"></div></div></td></tr>`).join('')}</tbody></table></div>`;el.innerHTML=podHTML+tableHTML+renderLideres();}
 
 function renderLideres(){
   if(!Object.keys(lideresGravados).length && !participants.length) return '';
@@ -410,13 +359,8 @@ function renderLideres(){
   for(const fase of FASES_PREMIADAS){
     if(!participants.length){ html+=`<div style="background:rgba(13,31,60,.5);border:1px solid rgba(255,184,0,.08);padding:1.5rem;text-align:center;"><div style="font-family:'Orbitron',monospace;font-size:.7rem;color:var(--cyan);letter-spacing:.15em;margin-bottom:.8rem;">${fase.label}</div><div style="color:var(--grey);font-size:.8rem;">Aguardando dados</div></div>`; continue; }
     
-    const scored = participants.map(p=>{const s=calcScorePhase(p,fase.filter);return{nome:p.nome,pts:s.total,exatos:s.exatos,p40:s.p40,p30:s.p30};})
-      .sort((a,b)=>{
-        if(b.pts!==a.pts) return b.pts-a.pts;
-        if(b.exatos!==a.exatos) return b.exatos-a.exatos;
-        if(b.p40!==a.p40) return b.p40-a.p40;
-        return b.p30-a.p30;
-      });
+    const scored = participants.map(p=>({nome:p.nome,pts:calcScorePhase(p,fase.filter).total}))
+      .sort((a,b)=>b.pts-a.pts);
     const lider = scored[0];
     
     // Auto-close: if conditions met and not yet saved, save now
@@ -477,11 +421,8 @@ function openFaseModal(faseId){
         </div>
       </td>
       <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Orbitron',monospace;font-weight:700;color:var(--gold);text-align:right;">${p.s.total}</td>
-      <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;color:var(--green);font-size:.75rem;">${p.s.exatos}<br><span style="color:var(--grey);font-size:.6rem">${p.s.pctExatos}%</span></td>
-      <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;color:var(--cyan);font-size:.75rem;">${p.s.p40}<br><span style="color:var(--grey);font-size:.6rem">${p.s.pctP40}%</span></td>
-      <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;color:var(--gold);font-size:.75rem;">${p.s.p30}<br><span style="color:var(--grey);font-size:.6rem">${p.s.pctP30}%</span></td>
-      <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;color:#999;font-size:.75rem;">${p.s.p10}<br><span style="color:var(--grey);font-size:.6rem">${p.s.pctP10}%</span></td>
-      <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;color:var(--red);font-size:.75rem;">${p.s.p0}<br><span style="color:var(--grey);font-size:.6rem">${p.s.pctP0}%</span></td>
+      <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;color:var(--grey);font-size:.8rem;">${p.s.exatos}</td>
+      <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;color:var(--grey);font-size:.8rem;">${p.s.p40}</td>
     </tr>`).join('');
   
   document.getElementById('modal-title').innerHTML=`RANKING — ${fase.label.toUpperCase()}${isGravado?' <span style="font-size:.6rem;color:var(--green);margin-left:.5rem;">✅ ENCERRADA</span>':''}`;
@@ -494,230 +435,15 @@ function openFaseModal(faseId){
         <th style="padding:.8rem 1rem;text-align:left;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">#</th>
         <th style="padding:.8rem 1rem;text-align:left;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">PALPITEIRO</th>
         <th style="padding:.8rem 1rem;text-align:right;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">PTS</th>
-        <th style="padding:.8rem 1rem;text-align:center;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">50pts</th>
+        <th style="padding:.8rem 1rem;text-align:center;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">EXATOS</th>
         <th style="padding:.8rem 1rem;text-align:center;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">40pts</th>
-        <th style="padding:.8rem 1rem;text-align:center;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">30pts</th>
-        <th style="padding:.8rem 1rem;text-align:center;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">10pts</th>
-        <th style="padding:.8rem 1rem;text-align:center;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">0pts</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
   document.getElementById('modal-overlay').classList.add('open');
 }
-function openModal(idx){const p=participants[idx];if(!p)return;document.getElementById('modal-title').textContent=`PALPITES — ${p.nome.toUpperCase()}`;const sc=calcScore(p);let html=`<div style="display:flex;gap:2rem;flex-wrap:wrap;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,184,0,0.1)"><div><span style="font-family:'Orbitron',monospace;font-size:2rem;color:var(--gold);font-weight:900">${sc.total}</span> <span style="color:var(--grey);font-size:0.8rem">pontos totais</span></div><div style="display:flex;gap:1.2rem;align-items:center;flex-wrap:wrap"><div><span style="color:var(--green);font-weight:700">${sc.exatos}</span> <span style="color:var(--grey);font-size:.65rem">(${sc.pctExatos}%)</span> <span style="font-size:0.7rem;color:var(--grey)">exatos·50pts</span></div><div><span style="color:var(--cyan);font-weight:700">${sc.p40}</span> <span style="color:var(--grey);font-size:.65rem">(${sc.pctP40}%)</span> <span style="font-size:0.7rem;color:var(--grey)">40pts</span></div><div><span style="color:var(--gold);font-weight:700">${sc.p30}</span> <span style="color:var(--grey);font-size:.65rem">(${sc.pctP30}%)</span> <span style="font-size:0.7rem;color:var(--grey)">30pts</span></div><div><span style="color:#999;font-weight:700">${sc.p10}</span> <span style="color:var(--grey);font-size:.65rem">(${sc.pctP10}%)</span> <span style="font-size:0.7rem;color:var(--grey)">10pts</span></div><div><span style="color:var(--red);font-weight:700">${sc.p0}</span> <span style="color:var(--grey);font-size:.65rem">(${sc.pctP0}%)</span> <span style="font-size:0.7rem;color:var(--grey)">0pts</span></div></div></div>`;const grupos=[...new Set(p.jogos.filter(j=>j.fase==='grupos').map(j=>j.grupo))].sort();for(const grp of grupos){const js=p.jogos.filter(j=>j.grupo===grp);html+=`<div class="modal-phase">GRUPO ${grp}</div>`;for(const j of js){const key=`g${j.idx}`;const r=results[key];const pts=getPts(j,key);const pc=pts===null?'':pts===50?'var(--green)':pts===40?'var(--cyan)':pts===30?'var(--gold)':pts===10?'var(--grey)':'var(--red)';const pb=pts!==null?`<span style="font-family:'Orbitron',monospace;font-size:0.7rem;color:${pc};font-weight:700;min-width:28px;text-align:right">${pts}pts</span>`:'';const rs=r&&r.golsM!==null&&r.golsV!==null?`<span style="font-size:0.65rem;color:var(--grey)">(${r.golsM}×${r.golsV})</span>`:'';html+=`<div class="modal-match"><div class="mteam home">${j.mandante}</div><div style="display:flex;align-items:center;gap:0.4rem"><div class="mscore">${j.golsM??'?'} × ${j.golsV??'?'}</div>${rs}${pb}</div><div class="mteam away">${j.visitante}</div></div>`;}}const fases=['dezesseis','oitavasReal','quartasReal','semisReal','terceiro','final'];const fL={dezesseis:'⚔️ 16 AVOS DE FINAL',oitavasReal:'⚡ OITAVAS DE FINAL',quartasReal:'🔥 QUARTAS DE FINAL',semisReal:'🌟 SEMIFINAIS',terceiro:'🥉 3º LUGAR',final:'🏆 FINAL'};for(const fase of fases){const js=p.jogos.filter(j=>j.fase===fase).sort((a,b)=>a.jogo-b.jogo);if(!js.length)continue;html+=`<div class="modal-phase">${fL[fase]}</div>`;for(const j of js){const key=`mm${j.jogo}`;const r=results[key];const pts=getPts(j,key);const pc=pts===null?'':pts===50?'var(--green)':pts===40?'var(--cyan)':pts===30?'var(--gold)':pts===10?'var(--grey)':'var(--red)';const pb=pts!==null?`<span style="font-family:'Orbitron',monospace;font-size:0.7rem;color:${pc};font-weight:700;min-width:28px;text-align:right">${pts}pts</span>`:'';const rs=r&&r.golsM!==null&&r.golsV!==null?`<span style="font-size:0.65rem;color:var(--grey)">(${r.golsM}×${r.golsV})</span>`:'';let ppInfo='';if(r&&(r.mandante||r.visitante)&&j.fase!=='grupos'){const ppm=r.mandante&&j.mandante===r.mandante?'+20PP':'';const ppv=r.visitante&&j.visitante===r.visitante?'+20PP':'';if(ppm||ppv)ppInfo=`<span style="font-size:0.65rem;color:var(--green)">${[ppm,ppv].filter(Boolean).join(' ')}</span>`;}html+=`<div class="modal-match"><div class="mteam home">${j.mandante}</div><div style="display:flex;align-items:center;gap:0.4rem;flex-direction:column"><div style="display:flex;align-items:center;gap:0.4rem"><div class="mscore">${j.golsM??'?'} × ${j.golsV??'?'}</div>${rs}${pb}</div>${ppInfo}</div><div class="mteam away">${j.visitante}</div></div>`;}}document.getElementById('modal-body').innerHTML=html;document.getElementById('modal-overlay').classList.add('open');}
+function openModal(idx){const p=participants[idx];if(!p)return;document.getElementById('modal-title').textContent=`PALPITES — ${p.nome.toUpperCase()}`;const sc=calcScore(p);let html=`<div style="display:flex;gap:2rem;flex-wrap:wrap;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,184,0,0.1)"><div><span style="font-family:'Orbitron',monospace;font-size:2rem;color:var(--gold);font-weight:900">${sc.total}</span> <span style="color:var(--grey);font-size:0.8rem">pontos totais</span></div><div style="display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap"><div><span style="color:var(--green);font-weight:700">${sc.exatos}</span> <span style="font-size:0.75rem;color:var(--grey)">placares exatos (50pts)</span></div><div><span style="color:var(--cyan);font-weight:700">${sc.p40}</span> <span style="font-size:0.75rem;color:var(--grey)">vencedor+gols (40pts)</span></div><div><span style="color:var(--gold);font-weight:700">${sc.p30}</span> <span style="font-size:0.75rem;color:var(--grey)">resultado (30pts)</span></div></div></div>`;const grupos=[...new Set(p.jogos.filter(j=>j.fase==='grupos').map(j=>j.grupo))].sort();for(const grp of grupos){const js=p.jogos.filter(j=>j.grupo===grp);html+=`<div class="modal-phase">GRUPO ${grp}</div>`;for(const j of js){const key=`g${j.idx}`;const r=results[key];const pts=getPts(j,key);const pc=pts===null?'':pts===50?'var(--green)':pts===40?'var(--cyan)':pts===30?'var(--gold)':pts===10?'var(--grey)':'var(--red)';const pb=pts!==null?`<span style="font-family:'Orbitron',monospace;font-size:0.7rem;color:${pc};font-weight:700;min-width:28px;text-align:right">${pts}pts</span>`:'';const rs=r&&r.golsM!==null&&r.golsV!==null?`<span style="font-size:0.65rem;color:var(--grey)">(${r.golsM}×${r.golsV})</span>`:'';html+=`<div class="modal-match"><div class="mteam home">${j.mandante}</div><div style="display:flex;align-items:center;gap:0.4rem"><div class="mscore">${j.golsM??'?'} × ${j.golsV??'?'}</div>${rs}${pb}</div><div class="mteam away">${j.visitante}</div></div>`;}}const fases=['oitavas','quartas','semis','terceiro','final'];const fL={oitavas:'⚔️ OITAVAS',quartas:'⚡ QUARTAS',semis:'🔥 SEMIFINAIS',terceiro:'🥉 3º LUGAR',final:'🏆 FINAL'};for(const fase of fases){const js=p.jogos.filter(j=>j.fase===fase).sort((a,b)=>a.jogo-b.jogo);if(!js.length)continue;html+=`<div class="modal-phase">${fL[fase]}</div>`;for(const j of js){const key=`mm${j.jogo}`;const r=results[key];const pts=getPts(j,key);const pc=pts===null?'':pts===50?'var(--green)':pts===40?'var(--cyan)':pts===30?'var(--gold)':pts===10?'var(--grey)':'var(--red)';const pb=pts!==null?`<span style="font-family:'Orbitron',monospace;font-size:0.7rem;color:${pc};font-weight:700;min-width:28px;text-align:right">${pts}pts</span>`:'';const rs=r&&r.golsM!==null&&r.golsV!==null?`<span style="font-size:0.65rem;color:var(--grey)">(${r.golsM}×${r.golsV})</span>`:'';let ppInfo='';if(r&&(r.mandante||r.visitante)&&j.fase!=='grupos'){const ppm=r.mandante&&j.mandante===r.mandante?'+20PP':'';const ppv=r.visitante&&j.visitante===r.visitante?'+20PP':'';if(ppm||ppv)ppInfo=`<span style="font-size:0.65rem;color:var(--green)">${[ppm,ppv].filter(Boolean).join(' ')}</span>`;}html+=`<div class="modal-match"><div class="mteam home">${j.mandante}</div><div style="display:flex;align-items:center;gap:0.4rem;flex-direction:column"><div style="display:flex;align-items:center;gap:0.4rem"><div class="mscore">${j.golsM??'?'} × ${j.golsV??'?'}</div>${rs}${pb}</div>${ppInfo}</div><div class="mteam away">${j.visitante}</div></div>`;}}document.getElementById('modal-body').innerHTML=html;document.getElementById('modal-overlay').classList.add('open');}
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
-
-// ── DASHBOARD DE DESTAQUES ──
-function todasChaves(p){
-  // retorna todas as chaves de jogos de um participante (g1, g2, ..., mm73, ...)
-  return p.jogos.map(j=>j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`);
-}
-function nomeCurto(nome){return nome.split(' ')[0];}
-function fmtNomes(lista){
-  if(lista.length===1) return `<div class="dash-names">${lista[0]}</div>`;
-  return `<div class="dash-names multi">${lista.join(', ')}</div>`;
-}
-function dashCard(cor,icon,label,conteudoHTML,sub){
-  return `<div class="dash-card c-${cor} fade-in">
-    <span class="dash-icon">${icon}</span>
-    <div class="dash-label">${label}</div>
-    ${conteudoHTML}
-    ${sub?`<div class="dash-sub">${sub}</div>`:''}
-  </div>`;
-}
-
-function renderDashboard(){
-  const el = document.getElementById('dashboard-content');
-  if(!participants.length){
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Carregue as planilhas para ver os destaques</div></div>`;
-    return;
-  }
-
-  // Coletar todas as chaves de jogos já com resultado
-  const todasKeys = new Set();
-  participants.forEach(p=>todasChaves(p).forEach(k=>todasKeys.add(k)));
-  const keysComResultado = [...todasKeys].filter(k=>{
-    const r = results[k];
-    return r && r.golsM!==null && r.golsV!==null;
-  });
-
-  if(!keysComResultado.length){
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Aguardando resultados para gerar os destaques</div></div>`;
-    return;
-  }
-
-  // ── Por jogo: contagem de pts por participante naquele jogo + nomes
-  function getJogoInfo(key){
-    for(const p of participants){
-      const j = key.startsWith('g')
-        ? p.jogos.find(jj=>jj.fase==='grupos'&&`g${jj.idx}`===key)
-        : p.jogos.find(jj=>jj.fase!=='grupos'&&`mm${jj.jogo}`===key);
-      if(j) return {mandante:j.mandante, visitante:j.visitante};
-    }
-    return {mandante:'?',visitante:'?'};
-  }
-
-  // 1) Jogo com mais acertos (placar exato) e 2) Jogo com menos acertos (zebra)
-  let melhorJogo=null, melhorCount=-1, melhorTotalAval=0;
-  let piorJogo=null, piorCount=-1, piorTotalAval=0;
-  // 7) Placar mais palpitado (maior % de exatos no confronto)
-  let placarMaisPalpitadoKey=null, placarMaisPalpitadoPct=-1, placarMaisPalpitadoQtd=0, placarMaisPalpitadoTotal=0;
-
-  for(const key of keysComResultado){
-    let cExatos=0, cZero=0, total=0;
-    for(const p of participants){
-      const j = key.startsWith('g')
-        ? p.jogos.find(jj=>jj.fase==='grupos'&&`g${jj.idx}`===key)
-        : p.jogos.find(jj=>jj.fase!=='grupos'&&`mm${jj.jogo}`===key);
-      if(!j||j.golsM===null||j.golsV===null) continue;
-      total++;
-      const pts=getPts(j,key);
-      if(pts===50) cExatos++;
-      if(pts===0) cZero++;
-    }
-    if(total===0) continue;
-    if(cExatos>melhorCount){melhorCount=cExatos;melhorJogo=key;melhorTotalAval=total;}
-    if(cZero>piorCount){piorCount=cZero;piorJogo=key;piorTotalAval=total;}
-    const pctExatoJogo = total>0?Math.round(cExatos/total*100):0;
-    if(cExatos>0 && pctExatoJogo>placarMaisPalpitadoPct){
-      placarMaisPalpitadoPct=pctExatoJogo;placarMaisPalpitadoKey=key;placarMaisPalpitadoQtd=cExatos;placarMaisPalpitadoTotal=total;
-    }
-  }
-
-  // 3) Pior palpite do bolão — maior diferença entre palpite e resultado real (erro total = 0pts, maior distância)
-  let piorPalpite=null, piorDist=-1;
-  for(const p of participants){
-    for(const key of todasChaves(p)){
-      const r = results[key];
-      if(!r||r.golsM===null||r.golsV===null) continue;
-      const j = key.startsWith('g')
-        ? p.jogos.find(jj=>jj.fase==='grupos'&&`g${jj.idx}`===key)
-        : p.jogos.find(jj=>jj.fase!=='grupos'&&`mm${jj.jogo}`===key);
-      if(!j||j.golsM===null||j.golsV===null) continue;
-      const pts=getPts(j,key);
-      if(pts!==0) continue; // só considera erro total
-      const dist = Math.abs(j.golsM-r.golsM)+Math.abs(j.golsV-r.golsV);
-      if(dist>piorDist){
-        piorDist=dist;
-        piorPalpite={nome:p.nome, palpite:`${j.golsM} x ${j.golsV}`, real:`${r.golsM} x ${r.golsV}`, info:getJogoInfo(key)};
-      }
-    }
-  }
-
-  // 4) Rei do zero ponto (geral) — quem mais teve 0pts em todos os jogos
-  // 6) Quem menos zerou
-  // 8) Quem mais acertou placar exato (50pts) — geral
-  const statsGerais = participants.map(p=>{
-    const sc = calcScore(p);
-    return {nome:p.nome, p0:sc.p0, exatos:sc.exatos, avaliados:sc.avaliados};
-  }).filter(s=>s.avaliados>0);
-
-  function empatadosMax(arr,campo){
-    if(!arr.length) return [];
-    const max = Math.max(...arr.map(a=>a[campo]));
-    if(max<=0 && campo==='p0') return []; // ninguém zerou ainda? ainda mostra se max>=0... mantemos se max>0
-    return arr.filter(a=>a[campo]===max).map(a=>a.nome);
-  }
-  function empatadosMin(arr,campo){
-    if(!arr.length) return [];
-    const min = Math.min(...arr.map(a=>a[campo]));
-    return arr.filter(a=>a[campo]===min).map(a=>a.nome);
-  }
-
-  const reiDoZero = empatadosMax(statsGerais,'p0');
-  const reiDoZeroVal = statsGerais.length?Math.max(...statsGerais.map(s=>s.p0)):0;
-  const menosZerou = empatadosMin(statsGerais,'p0');
-  const menosZerouVal = statsGerais.length?Math.min(...statsGerais.map(s=>s.p0)):0;
-  const maisExatos = empatadosMax(statsGerais,'exatos');
-  const maisExatosVal = statsGerais.length?Math.max(...statsGerais.map(s=>s.exatos)):0;
-
-  // 5) Quem mais pontuou no dia (jogos com resultado lançado hoje)
-  const jogosHojeSet = new Set(getJogosHoje());
-  const statsHoje = participants.map(p=>{
-    let pts=0, teveJogoHoje=false;
-    for(const j of p.jogos){
-      const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;
-      if(!jogosHojeSet.has(key)) continue;
-      const r=results[key];
-      if(!r||r.golsM===null||r.golsV===null) continue;
-      teveJogoHoje=true;
-      pts+=getPts(j,key)||0;
-      // PP bonus
-      if(j.fase!=='grupos'){
-        if(r.mandante&&j.mandante===r.mandante)pts+=20;
-        if(r.visitante&&j.visitante===r.visitante)pts+=20;
-      }
-    }
-    return {nome:p.nome, pts, teveJogoHoje};
-  }).filter(s=>s.teveJogoHoje);
-  const maisPontuouHoje = empatadosMax(statsHoje,'pts');
-  const maisPontuouHojeVal = statsHoje.length?Math.max(...statsHoje.map(s=>s.pts)):0;
-
-  // Montar cards
-  let cards = [];
-
-  // 1. Jogo com mais acertos (placar exato)
-  if(melhorJogo){
-    const info=getJogoInfo(melhorJogo);
-    cards.push(dashCard('green','🎯','Jogo com mais acertos (placar exato)',
-      `<div class="dash-names">${info.mandante} x ${info.visitante}</div><div class="dash-value" style="color:var(--green)">${melhorCount} acerto${melhorCount!==1?'s':''}</div>`,
-      `de ${melhorTotalAval} palpite${melhorTotalAval!==1?'s':''} avaliado${melhorTotalAval!==1?'s':''}`));
-  }
-
-  // 2. Jogo com menor número de acertos (zebra)
-  if(piorJogo){
-    const info=getJogoInfo(piorJogo);
-    cards.push(dashCard('red','🦓','Zebra do bolão (mais 0 pontos)',
-      `<div class="dash-names">${info.mandante} x ${info.visitante}</div><div class="dash-value" style="color:var(--red)">${piorCount} zerou${piorCount!==1?'':''}</div>`,
-      `de ${piorTotalAval} palpite${piorTotalAval!==1?'s':''} avaliado${piorTotalAval!==1?'s':''}`));
-  }
-
-  // 3. Pior palpite do bolão
-  if(piorPalpite){
-    cards.push(dashCard('red','😬','Pior palpite do bolão',
-      `${fmtNomes([piorPalpite.nome])}<div class="dash-sub" style="margin-top:.2rem">${piorPalpite.info.mandante} x ${piorPalpite.info.visitante}</div><div class="dash-value" style="color:var(--red);font-size:1.1rem;margin-top:.4rem">Palpitou ${piorPalpite.palpite} → deu ${piorPalpite.real}</div>`,
-      ''));
-  }
-
-  // 4. Rei do zero ponto (geral)
-  if(reiDoZero.length){
-    cards.push(dashCard('red','👑','Rei do zero ponto (geral)',
-      `${fmtNomes(reiDoZero)}<div class="dash-value" style="color:var(--red)">${reiDoZeroVal} zero${reiDoZeroVal!==1?'s':''}</div>`,
-      'em todos os jogos avaliados'));
-  }
-
-  // 5. Quem mais pontuou no dia
-  if(maisPontuouHoje.length){
-    cards.push(dashCard('cyan','🔥','Quem mais pontuou hoje',
-      `${fmtNomes(maisPontuouHoje)}<div class="dash-value" style="color:var(--cyan)">${maisPontuouHojeVal} pts</div>`,
-      'considerando os jogos de hoje já resultados'));
-  }
-
-  // 6. Placar mais palpitado
-  if(placarMaisPalpitadoKey){
-    const info=getJogoInfo(placarMaisPalpitadoKey);
-    const r=results[placarMaisPalpitadoKey];
-    cards.push(dashCard('gold','📋','Placar mais palpitado (acertado por mais gente)',
-      `<div class="dash-names">${info.mandante} x ${info.visitante}</div><div class="dash-value" style="color:var(--gold)">${r.golsM} x ${r.golsV} — ${placarMaisPalpitadoPct}%</div>`,
-      `${placarMaisPalpitadoQtd} de ${placarMaisPalpitadoTotal} palpiteiros acertaram esse placar exato`));
-  }
-
-  // 7. Quem menos zerou
-  if(menosZerou.length){
-    cards.push(dashCard('green','🛡️','Quem menos zerou',
-      `${fmtNomes(menosZerou)}<div class="dash-value" style="color:var(--green)">${menosZerouVal} zero${menosZerouVal!==1?'s':''}</div>`,
-      'em todos os jogos avaliados'));
-  }
-
-  // 8. Quem mais acertou placar exato (geral)
-  if(maisExatos.length && maisExatosVal>0){
-    cards.push(dashCard('gold','⚽','Quem mais acertou placar exato (50pts)',
-      `${fmtNomes(maisExatos)}<div class="dash-value" style="color:var(--gold)">${maisExatosVal} exato${maisExatosVal!==1?'s':''}</div>`,
-      'em todos os jogos avaliados'));
-  }
-
-  el.innerHTML = `<div class="dash-grid">${cards.join('')}</div>`;
-}
 
 // ── ESTATÍSTICAS DO DIA ──
 function getJogosHoje(){
