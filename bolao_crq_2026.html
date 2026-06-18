@@ -388,7 +388,7 @@ function calcScore(p){ return calcScoreFiltered(p, null); }
 function calcScorePhase(p, filterFn){ return calcScoreFiltered(p, filterFn); }
 function getPts(j,key){const r=results[key];if(!r||r.golsM===null||r.golsV===null||j.golsM===null||j.golsV===null)return null;const pM=j.golsM,pV=j.golsV,rM=Number(r.golsM),rV=Number(r.golsV);if(pM===rM&&pV===rV)return 50;const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E';if(rv===pv&&(pM===rM||pV===rV))return 40;if(rv===pv)return 30;if(pM===rM||pV===rV)return 10;return 0;}
 function renderParticipants(){const el=document.getElementById('participants-list');if(!participants.length){el.innerHTML='';return;}el.innerHTML=`<div style="margin-bottom:1rem;font-family:'Orbitron',monospace;font-size:0.7rem;letter-spacing:0.2em;color:var(--grey);text-transform:uppercase;">${participants.length} palpiteiro${participants.length!==1?'s':''} carregado${participants.length!==1?'s':''}</div><div class="participants-grid">${participants.map((p,i)=>`<div class="participant-card" onclick="openModal(${i})"><div class="pcard-avatar">${initials(p.nome)}</div><div style="flex:1"><div class="pcard-name">${p.nome}</div><div class="pcard-sub">${p.email||'sem e-mail'} · ${p.jogos.length} jogos</div></div><button class="pcard-remove" onclick="event.stopPropagation();removeP(${i})" title="Remover">✕</button></div>`).join('')}</div>`;document.getElementById('stat-p').textContent=participants.length;}
-function removeP(i){checkAdmin(()=>{participants.splice(i,1);save();renderParticipants();renderRanking();showToast('Participante removido','info');});}
+function removeP(i){checkAdmin(()=>{participants.splice(i,1);save();renderParticipants();renderRanking();renderDashboard();showToast('Participante removido','info');});}
 function renderRanking(){const el=document.getElementById('ranking-content');if(!participants.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏆</div><div class="empty-text">Carregue as planilhas para ver o ranking</div></div>`;document.getElementById('stat-l').textContent='—';return;}const scored=participants.map((p,i)=>({...p,i,score:calcScore(p)})).sort((a,b)=>{
     if(b.score.total!==a.score.total) return b.score.total-a.score.total;
     if(b.score.exatos!==a.score.exatos) return b.score.exatos-a.score.exatos;
@@ -450,7 +450,6 @@ function renderLideres(){
       </div>
       ${isGravado?`<div style="margin-top:.6rem;font-size:.65rem;color:var(--green);font-family:'Orbitron',monospace;letter-spacing:.1em;">✅ FASE ENCERRADA</div>`:''}
       <button onclick="openFaseModal('${fase.id}')" style="margin-top:.8rem;width:100%;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);color:var(--cyan);font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.1em;padding:.4rem;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='rgba(0,212,255,.15)'" onmouseout="this.style.background='rgba(0,212,255,.08)'">VER RANKING DA FASE →</button>
-      ${isGravado?`<button onclick="recalcularLider('${fase.id}')" style="margin-top:.4rem;width:100%;background:rgba(255,184,0,.06);border:1px solid rgba(255,184,0,.15);color:var(--gold);font-family:'Orbitron',monospace;font-size:.58rem;letter-spacing:.1em;padding:.35rem;cursor:pointer;transition:all .2s;" onmouseover="this.style.background='rgba(255,184,0,.12)'" onmouseout="this.style.background='rgba(255,184,0,.06)'">🔄 RECALCULAR LÍDER</button>`:''}
     </div>`;
   }
   html+=`</div></div>`;
@@ -897,7 +896,7 @@ function checkAdmin(callback){
   if(pwd===ADMIN_PWD){adminUnlocked=true;callback();}
   else if(pwd!==null){showToast('❌ Senha incorreta','error');}
 }
-async function processFiles(files){let added=0;for(const f of files){if(!f.name.endsWith('.xlsx')){showToast(`${f.name} não é .xlsx`,'error');continue;}try{const d=await readExcel(f);const ex=participants.findIndex(p=>p.nome===d.nome);if(ex>=0){participants[ex]=d;showToast(`✅ ${d.nome} atualizado`);}else{participants.push(d);showToast(`✅ ${d.nome} adicionado`);}added++;}catch(e){showToast(`❌ Erro: ${e.message}`,'error');}}if(added>0){await save();renderParticipants();renderRanking();}}
+async function processFiles(files){let added=0;for(const f of files){if(!f.name.endsWith('.xlsx')){showToast(`${f.name} não é .xlsx`,'error');continue;}try{const d=await readExcel(f);const ex=participants.findIndex(p=>p.nome===d.nome);if(ex>=0){participants[ex]=d;showToast(`✅ ${d.nome} atualizado`);}else{participants.push(d);showToast(`✅ ${d.nome} adicionado`);}added++;}catch(e){showToast(`❌ Erro: ${e.message}`,'error');}}if(added>0){await save();renderParticipants();renderRanking();renderStatsHoje();renderDashboard();}}
 function showToast(msg,type='success'){const c=document.getElementById('toast-container');const t=document.createElement('div');t.className=`toast${type==='error'?' error':''}`;t.innerHTML=`<span>${msg}</span>`;c.appendChild(t);setTimeout(()=>t.remove(),3500);}
 function initParticles(){const cv=document.getElementById('particles-canvas');const ctx=cv.getContext('2d');let W=cv.width=window.innerWidth,H=cv.height=window.innerHeight;const pts=Array.from({length:50},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,size:Math.random()*2+.5,color:Math.random()>.5?'#FFB800':'#00D4FF'}));function draw(){ctx.clearRect(0,0,W,H);for(const p of pts){p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fillStyle=p.color+'66';ctx.fill();}for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<100){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(255,184,0,${.05*(1-d/100)})`;ctx.lineWidth=.5;ctx.stroke();}}requestAnimationFrame(draw);}draw();window.addEventListener('resize',()=>{W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;});}
 document.getElementById('file-input').addEventListener('change',e=>{const files=[...e.target.files];e.target.value='';if(!files.length)return;checkAdmin(()=>{processFiles(files);});});
@@ -906,7 +905,7 @@ zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag
 zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
 zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag-over');const files=[...e.dataTransfer.files];if(!files.length)return;checkAdmin(()=>{processFiles(files);});});
 document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay'))closeModal();});
-async function init(){initParticles();await loadState();renderParticipants();renderRanking();renderStatsHoje();}
+async function init(){initParticles();await loadState();renderParticipants();renderRanking();renderStatsHoje();renderDashboard();}
 init().then(()=>{
   // Escuta mudanças em tempo real
   db.collection('bolao').doc('participants').onSnapshot(snap=>{
@@ -917,6 +916,7 @@ init().then(()=>{
         renderParticipants();
         renderRanking();
         renderStatsHoje();
+        renderDashboard();
       }
     }
   });
@@ -927,6 +927,7 @@ init().then(()=>{
         results=fresh;
         renderRanking();
         renderStatsHoje();
+        renderDashboard();
       }
     }
   });
