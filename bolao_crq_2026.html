@@ -180,45 +180,7 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padd
 .dash-names{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.6rem;}
 .dash-name-chip{background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.25);color:var(--gold);font-size:.72rem;padding:.2rem .6rem;border-radius:20px;font-family:'Rajdhani',sans-serif;font-weight:600;}
 
-/* SIMULADOR */
-.sim-wrapper{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
-@media(max-width:800px){.sim-wrapper{grid-template-columns:1fr;}}
-.sim-matches{display:flex;flex-direction:column;gap:.8rem;}
-.sim-match{background:rgba(13,31,60,0.8);border:1px solid rgba(167,139,250,0.2);padding:1rem 1.2rem;position:relative;transition:border-color .2s;}
-.sim-match::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,#a78bfa,#7c3aed);}
-.sim-match.has-result::before{background:linear-gradient(180deg,var(--green),#0a8a5f);}
-.sim-teams{display:flex;align-items:center;gap:.6rem;margin-bottom:.7rem;}
-.sim-team{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.95rem;color:var(--white);flex:1;}
-.sim-team.right{text-align:right;}
-.sim-vs{font-family:'Orbitron',monospace;font-size:.65rem;color:var(--grey);}
-.sim-inputs{display:flex;align-items:center;justify-content:center;gap:.5rem;}
-.sim-score-input{width:52px;background:rgba(0,0,0,.4);border:1px solid rgba(167,139,250,.3);color:var(--white);font-family:'Orbitron',monospace;font-size:1.2rem;font-weight:700;text-align:center;padding:.4rem .2rem;outline:none;transition:border-color .2s;}
-.sim-score-input:focus{border-color:#a78bfa;}
-.sim-dash{font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--grey);}
-.sim-real-badge{font-size:.62rem;font-family:'Orbitron',monospace;color:var(--green);letter-spacing:.08em;margin-top:.4rem;text-align:center;}
-.sim-podium{background:rgba(13,31,60,0.6);border:1px solid rgba(167,139,250,0.15);padding:1.2rem;position:sticky;top:80px;}
-.sim-podium-title{font-family:'Orbitron',monospace;font-size:.7rem;letter-spacing:.15em;color:#a78bfa;margin-bottom:1rem;text-align:center;}
-.sim-podium-empty{color:var(--grey);font-size:.85rem;text-align:center;padding:2rem 0;font-style:italic;}
-.sim-rank-row{display:flex;align-items:center;gap:.8rem;padding:.6rem .4rem;border-bottom:1px solid rgba(255,255,255,.04);}
-.sim-rank-row:last-child{border-bottom:none;}
-.sim-rank-pos{font-family:'Orbitron',monospace;font-size:.8rem;font-weight:700;width:24px;text-align:center;}
-.sim-rank-pos.p1{color:var(--gold);}
-.sim-rank-pos.p2{color:#aaa;}
-.sim-rank-pos.p3{color:#cd7f32;}
-.sim-rank-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:.75rem;font-weight:700;flex-shrink:0;}
-.sim-rank-avatar.av1{background:linear-gradient(135deg,var(--gold),#FF8C00);color:var(--navy);}
-.sim-rank-avatar.av2{background:linear-gradient(135deg,#aaa,#666);color:var(--navy);}
-.sim-rank-avatar.av3{background:linear-gradient(135deg,#cd7f32,#8B4513);color:var(--white);}
-.sim-rank-info{flex:1;min-width:0;}
-.sim-rank-name{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.9rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.sim-rank-pts{font-family:'Orbitron',monospace;font-size:.65rem;color:var(--grey);}
-.sim-rank-total{font-family:'Orbitron',monospace;font-size:1rem;font-weight:900;}
-.sim-rank-delta{font-size:.65rem;font-family:'Orbitron',monospace;display:block;margin-top:.1rem;}
-.sim-rank-delta.up{color:var(--green);}
-.sim-rank-delta.same{color:var(--grey);}
-.sim-hint{font-size:.72rem;color:var(--grey);text-align:center;margin-top:.8rem;font-style:italic;}
-.sim-separator{height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,.3),transparent);margin:.8rem 0;}
-
+</style>
 </head>
 <body>
 <canvas id="particles-canvas"></canvas>
@@ -295,12 +257,6 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padd
       <h3 style="font-family:'Orbitron',monospace;font-size:1rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.4rem;">📊 DESTAQUES DO BOLÃO</h3>
       <p style="color:var(--grey);font-size:0.85rem;margin-bottom:1.2rem;">Indicadores gerais com todos os jogos já resultados</p>
       <div id="dashboard-content"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Carregue as planilhas para ver os destaques</div></div></div>
-    </div>
-
-    <div style="margin-top:3rem;">
-      <h3 style="font-family:'Orbitron',monospace;font-size:1rem;color:#a78bfa;letter-spacing:.1em;margin-bottom:.4rem;">🔮 SIMULADOR DO DIA</h3>
-      <p style="color:var(--grey);font-size:0.85rem;margin-bottom:1.2rem;">Simule os placares dos jogos de hoje e veja o top 3 projetado — não afeta a pontuação real</p>
-      <div id="simulator-content"><div class="empty-state"><div class="empty-icon">🔮</div><div class="empty-text">Carregue as planilhas para usar o simulador</div></div></div>
     </div>
   </section>
 </main>
@@ -940,7 +896,7 @@ function checkAdmin(callback){
   if(pwd===ADMIN_PWD){adminUnlocked=true;callback();}
   else if(pwd!==null){showToast('❌ Senha incorreta','error');}
 }
-async function processFiles(files){let added=0;for(const f of files){if(!f.name.endsWith('.xlsx')){showToast(`${f.name} não é .xlsx`,'error');continue;}try{const d=await readExcel(f);const ex=participants.findIndex(p=>p.nome===d.nome);if(ex>=0){participants[ex]=d;showToast(`✅ ${d.nome} atualizado`);}else{participants.push(d);showToast(`✅ ${d.nome} adicionado`);}added++;}catch(e){showToast(`❌ Erro: ${e.message}`,'error');}}if(added>0){await save();renderParticipants();renderRanking();renderStatsHoje();renderDashboard();renderSimulador();}}
+async function processFiles(files){let added=0;for(const f of files){if(!f.name.endsWith('.xlsx')){showToast(`${f.name} não é .xlsx`,'error');continue;}try{const d=await readExcel(f);const ex=participants.findIndex(p=>p.nome===d.nome);if(ex>=0){participants[ex]=d;showToast(`✅ ${d.nome} atualizado`);}else{participants.push(d);showToast(`✅ ${d.nome} adicionado`);}added++;}catch(e){showToast(`❌ Erro: ${e.message}`,'error');}}if(added>0){await save();renderParticipants();renderRanking();renderStatsHoje();renderDashboard();}}
 function showToast(msg,type='success'){const c=document.getElementById('toast-container');const t=document.createElement('div');t.className=`toast${type==='error'?' error':''}`;t.innerHTML=`<span>${msg}</span>`;c.appendChild(t);setTimeout(()=>t.remove(),3500);}
 function initParticles(){const cv=document.getElementById('particles-canvas');const ctx=cv.getContext('2d');let W=cv.width=window.innerWidth,H=cv.height=window.innerHeight;const pts=Array.from({length:50},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,size:Math.random()*2+.5,color:Math.random()>.5?'#FFB800':'#00D4FF'}));function draw(){ctx.clearRect(0,0,W,H);for(const p of pts){p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fillStyle=p.color+'66';ctx.fill();}for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);if(d<100){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);ctx.strokeStyle=`rgba(255,184,0,${.05*(1-d/100)})`;ctx.lineWidth=.5;ctx.stroke();}}requestAnimationFrame(draw);}draw();window.addEventListener('resize',()=>{W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;});}
 document.getElementById('file-input').addEventListener('change',e=>{const files=[...e.target.files];e.target.value='';if(!files.length)return;checkAdmin(()=>{processFiles(files);});});
@@ -949,173 +905,7 @@ zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag
 zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
 zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag-over');const files=[...e.dataTransfer.files];if(!files.length)return;checkAdmin(()=>{processFiles(files);});});
 document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay'))closeModal();});
-// ── SIMULADOR DO DIA ──
-let simPlacar = {}; // {key: {gM, gV}}
-
-function calcPtsSimulado(j, simResults){
-  const key = j.fase==='grupos' ? `g${j.idx}` : `mm${j.jogo}`;
-  const r = simResults[key];
-  if(!r || r.gM===null || r.gV===null || j.golsM===null || j.golsV===null) return null;
-  const pM=j.golsM, pV=j.golsV, rM=Number(r.gM), rV=Number(r.gV);
-  if(pM===rM && pV===rV) return 50;
-  const rv=rM>rV?'M':rM<rV?'V':'E', pv=pM>pV?'M':pM<pV?'V':'E';
-  if(rv===pv && (pM===rM||pV===rV)) return 40;
-  if(rv===pv) return 30;
-  if(pM===rM||pV===rV) return 10;
-  return 0;
-}
-
-function calcScoreSim(p, jogosHojeSet){
-  // Pontuação base real (excluindo jogos de hoje)
-  let base = calcScore(p).total;
-  // Subtrair pontos já calculados dos jogos de hoje que já têm resultado real
-  for(const j of p.jogos){
-    const key = j.fase==='grupos' ? `g${j.idx}` : `mm${j.jogo}`;
-    if(!jogosHojeSet.has(key)) continue;
-    const r = results[key];
-    if(r && r.golsM!==null && r.golsV!==null) {
-      base -= (getPts(j, key) || 0);
-    }
-  }
-  // Adicionar pontos simulados dos jogos de hoje
-  let simExtra = 0;
-  for(const j of p.jogos){
-    const key = j.fase==='grupos' ? `g${j.idx}` : `mm${j.jogo}`;
-    if(!jogosHojeSet.has(key)) continue;
-    const pts = calcPtsSimulado(j, simPlacar);
-    if(pts !== null) simExtra += pts;
-  }
-  return {total: base + simExtra, simExtra};
-}
-
-function renderSimulador(){
-  const el = document.getElementById('simulator-content');
-  if(!participants.length){
-    el.innerHTML=`<div class="empty-state"><div class="empty-icon">🔮</div><div class="empty-text">Carregue as planilhas para usar o simulador</div></div>`;
-    return;
-  }
-  const jogosHoje = getJogosHoje();
-  if(!jogosHoje.length){
-    el.innerHTML=`<div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">Nenhum jogo programado para hoje</div></div>`;
-    return;
-  }
-  const jogosHojeSet = new Set(jogosHoje);
-
-  // Montar info dos jogos
-  const jogoInfos = jogosHoje.map(key=>{
-    let mandante='?', visitante='?';
-    for(const p of participants){
-      const j = key.startsWith('g')
-        ? p.jogos.find(j=>j.fase==='grupos'&&`g${j.idx}`===key)
-        : p.jogos.find(j=>j.fase!=='grupos'&&`mm${j.jogo}`===key);
-      if(j){mandante=j.mandante; visitante=j.visitante; break;}
-    }
-    const real = results[key];
-    const temReal = real && real.golsM!==null && real.golsV!==null;
-    // Inicializar simPlacar com resultado real se existir
-    if(temReal && simPlacar[key]===undefined){
-      simPlacar[key] = {gM: Number(real.golsM), gV: Number(real.golsV)};
-    }
-    return {key, mandante, visitante, temReal, real};
-  });
-
-  // Montar coluna esquerda: inputs
-  let matchesHTML = jogoInfos.map((info,idx)=>{
-    const cur = simPlacar[info.key];
-    const gM = cur!==undefined ? cur.gM : '';
-    const gV = cur!==undefined ? cur.gV : '';
-    const hasResult = cur!==undefined && cur.gM!==null && cur.gV!==null;
-    const realBadge = info.temReal
-      ? `<div class="sim-real-badge">✅ RESULTADO REAL: ${info.real.golsM} x ${info.real.golsV}</div>` : '';
-    return `<div class="sim-match${hasResult?' has-result':''}" id="sim-match-${idx}">
-      <div class="sim-teams">
-        <span class="sim-team">${info.mandante}</span>
-        <span class="sim-vs">VS</span>
-        <span class="sim-team right">${info.visitante}</span>
-      </div>
-      <div class="sim-inputs">
-        <input class="sim-score-input" type="number" min="0" max="20" value="${gM}"
-          placeholder="0" oninput="simUpdate('${info.key}','M',this.value,${idx})" id="sim-m-${idx}">
-        <span class="sim-dash">×</span>
-        <input class="sim-score-input" type="number" min="0" max="20" value="${gV}"
-          placeholder="0" oninput="simUpdate('${info.key}','V',this.value,${idx})" id="sim-v-${idx}">
-      </div>
-      ${realBadge}
-    </div>`;
-  }).join('');
-
-  // Montar coluna direita: pódio simulado
-  const podioHTML = buildSimPodium(jogosHojeSet);
-
-  el.innerHTML = `<div class="sim-wrapper">
-    <div class="sim-matches">${matchesHTML}</div>
-    <div class="sim-podium">
-      <div class="sim-podium-title">🏆 TOP 3 PROJETADO</div>
-      <div id="sim-podium-inner">${podioHTML}</div>
-      <div class="sim-hint">Preencha os placares à esquerda para atualizar a projeção</div>
-    </div>
-  </div>`;
-}
-
-function buildSimPodium(jogosHojeSet){
-  const algumPlacar = Object.keys(simPlacar).some(k=>{
-    const s=simPlacar[k]; return s && s.gM!==null && s.gV!==null;
-  });
-  if(!algumPlacar) return `<div class="sim-podium-empty">Digite um placar ao lado para ver a projeção</div>`;
-
-  const rankReal = {};
-  participants.forEach(p=>{rankReal[p.nome]=calcScore(p).total;});
-
-  const ranked = participants.map(p=>{
-    const sim = calcScoreSim(p, jogosHojeSet);
-    const posReal = [...participants].sort((a,b)=>calcScore(b).total-calcScore(a).total).findIndex(x=>x.nome===p.nome)+1;
-    return {nome:p.nome, total:sim.total, simExtra:sim.simExtra, posReal};
-  }).sort((a,b)=>b.total-a.total);
-
-  const top3 = ranked.slice(0,3);
-  const avatarCls = ['av1','av2','av3'];
-  const posCls = ['p1','p2','p3'];
-  const medalha = ['🥇','🥈','🥉'];
-
-  return top3.map((p,i)=>{
-    const delta = p.simExtra > 0
-      ? `<span class="sim-rank-delta up">+${p.simExtra} pts hoje</span>`
-      : `<span class="sim-rank-delta same">sem ganhos hoje</span>`;
-    return `<div class="sim-rank-row">
-      <span class="sim-rank-pos ${posCls[i]}">${medalha[i]}</span>
-      <div class="sim-rank-avatar ${avatarCls[i]}">${initials(p.nome)}</div>
-      <div class="sim-rank-info">
-        <div class="sim-rank-name">${p.nome.split(' ')[0]} ${p.nome.split(' ').slice(-1)[0]}</div>
-        ${delta}
-      </div>
-      <div style="text-align:right">
-        <span class="sim-rank-total" style="color:${i===0?'var(--gold)':i===1?'#aaa':'#cd7f32'}">${p.total}</span>
-        <div style="font-size:.62rem;color:var(--grey);font-family:'Orbitron',monospace;">pts</div>
-      </div>
-    </div>`;
-  }).join('<div class="sim-separator"></div>');
-}
-
-function simUpdate(key, lado, val, idx){
-  if(!simPlacar[key]) simPlacar[key] = {gM:null, gV:null};
-  const v = val==='' ? null : Math.max(0,parseInt(val)||0);
-  if(lado==='M') simPlacar[key].gM = v;
-  else simPlacar[key].gV = v;
-
-  // Atualizar classe do card
-  const card = document.getElementById(`sim-match-${idx}`);
-  if(card){
-    const s=simPlacar[key];
-    if(s&&s.gM!==null&&s.gV!==null) card.classList.add('has-result');
-    else card.classList.remove('has-result');
-  }
-  // Atualizar só o pódio sem re-renderizar tudo
-  const jogosHoje = getJogosHoje();
-  const inner = document.getElementById('sim-podium-inner');
-  if(inner) inner.innerHTML = buildSimPodium(new Set(jogosHoje));
-}
-
-async function init(){initParticles();await loadState();renderParticipants();renderRanking();renderStatsHoje();renderDashboard();renderSimulador();}
+async function init(){initParticles();await loadState();renderParticipants();renderRanking();renderStatsHoje();renderDashboard();}
 init().then(()=>{
   // Escuta mudanças em tempo real
   db.collection('bolao').doc('participants').onSnapshot(snap=>{
@@ -1127,7 +917,6 @@ init().then(()=>{
         renderRanking();
         renderStatsHoje();
         renderDashboard();
-        renderSimulador();
       }
     }
   });
@@ -1139,8 +928,6 @@ init().then(()=>{
         renderRanking();
         renderStatsHoje();
         renderDashboard();
-        simPlacar={};
-        renderSimulador();
       }
     }
   });
