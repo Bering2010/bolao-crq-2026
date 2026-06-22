@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<title>SIMULADOR — BOLÃO CRQ 2026</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+:root{--gold:#FFB800;--navy:#020B1E;--navy-card:#0D1F3C;--cyan:#00D4FF;--white:#FFFFFF;--grey:#8899BB;--green:#00FF88;--purple:#a78bfa;--purple-dark:#7c3aed;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Rajdhani',sans-serif;background:var(--navy);color:var(--white);min-height:100vh;}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(2,11,30,0.97);backdrop-filter:blur(20px);border-bottom:1px solid rgba(167,139,250,0.2);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;}
+.topbar-title{font-family:'Orbitron',monospace;font-size:.95rem;font-weight:700;color:var(--purple);letter-spacing:.1em;display:flex;align-items:center;gap:.6rem;}
+.back-link{font-family:'Orbitron',monospace;font-size:.7rem;color:var(--grey);text-decoration:none;letter-spacing:.08em;border:1px solid rgba(255,255,255,.15);padding:.5rem 1rem;transition:all .2s;}
+.back-link:hover{color:var(--white);border-color:var(--purple);}
+main{max-width:1200px;margin:0 auto;padding:2.5rem 1.5rem 5rem;}
+.page-header{text-align:center;margin-bottom:2.5rem;}
+.page-header h1{font-family:'Orbitron',monospace;font-size:clamp(1.4rem,4vw,2rem);font-weight:900;color:var(--white);margin-bottom:.6rem;}
+.page-header h1 span{color:var(--purple);}
+.page-header p{color:var(--grey);font-size:.9rem;max-width:560px;margin:0 auto;line-height:1.6;}
+.loading,.empty-state{text-align:center;padding:4rem 1rem;color:var(--grey);}
+.empty-icon{font-size:3rem;margin-bottom:1rem;}
+.sim-wrapper{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;}
+@media(max-width:800px){.sim-wrapper{grid-template-columns:1fr;}}
+.sim-matches{display:flex;flex-direction:column;gap:.9rem;}
+.sim-match{background:rgba(13,31,60,0.8);border:1px solid rgba(167,139,250,0.2);padding:1.1rem 1.4rem;position:relative;transition:border-color .2s;}
+.sim-match::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--purple),var(--purple-dark));}
+.sim-match.has-result::before{background:linear-gradient(180deg,var(--green),#0a8a5f);}
+.sim-teams{display:flex;align-items:center;gap:.6rem;margin-bottom:.8rem;}
+.sim-team{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:1rem;color:var(--white);flex:1;}
+.sim-team.right{text-align:right;}
+.sim-vs{font-family:'Orbitron',monospace;font-size:.65rem;color:var(--grey);}
+.sim-inputs{display:flex;align-items:center;justify-content:center;gap:.6rem;}
+.sim-score-input{width:56px;background:rgba(0,0,0,.4);border:1px solid rgba(167,139,250,.3);color:var(--white);font-family:'Orbitron',monospace;font-size:1.3rem;font-weight:700;text-align:center;padding:.45rem .2rem;outline:none;transition:border-color .2s;}
+.sim-score-input:focus{border-color:var(--purple);}
+.sim-dash{font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--grey);}
+.sim-real-badge{font-size:.65rem;font-family:'Orbitron',monospace;color:var(--green);letter-spacing:.06em;margin-top:.5rem;text-align:center;}
+.sim-podium{background:rgba(13,31,60,0.6);border:1px solid rgba(167,139,250,0.15);padding:1.4rem;position:sticky;top:90px;}
+.sim-podium-title{font-family:'Orbitron',monospace;font-size:.75rem;letter-spacing:.15em;color:var(--purple);margin-bottom:1.2rem;text-align:center;}
+.sim-podium-empty{color:var(--grey);font-size:.88rem;text-align:center;padding:2.5rem 0;font-style:italic;}
+.sim-rank-row{display:flex;align-items:center;gap:.9rem;padding:.7rem .4rem;border-bottom:1px solid rgba(255,255,255,.04);}
+.sim-rank-row:last-child{border-bottom:none;}
+.sim-rank-pos{font-size:1.1rem;width:28px;text-align:center;}
+.sim-rank-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:.78rem;font-weight:700;flex-shrink:0;}
+.sim-rank-avatar.av1{background:linear-gradient(135deg,var(--gold),#FF8C00);color:var(--navy);}
+.sim-rank-avatar.av2{background:linear-gradient(135deg,#aaa,#666);color:var(--navy);}
+.sim-rank-avatar.av3{background:linear-gradient(135deg,#cd7f32,#8B4513);color:var(--white);}
+.sim-rank-info{flex:1;min-width:0;}
+.sim-rank-name{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.92rem;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sim-rank-delta{font-size:.68rem;font-family:'Orbitron',monospace;display:block;margin-top:.15rem;}
+.sim-rank-delta.up{color:var(--green);}
+.sim-rank-delta.same{color:var(--grey);}
+.sim-rank-total{font-family:'Orbitron',monospace;font-size:1.05rem;font-weight:900;}
+.sim-rank-pts-label{font-size:.62rem;color:var(--grey);font-family:'Orbitron',monospace;text-align:right;}
+.sim-hint{font-size:.74rem;color:var(--grey);text-align:center;margin-top:1rem;font-style:italic;}
+.sim-separator{height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,.3),transparent);margin:.6rem 0;}
+.reset-btn{display:block;margin:1.5rem auto 0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);color:var(--grey);font-family:'Orbitron',monospace;font-size:.65rem;letter-spacing:.08em;padding:.6rem 1.4rem;cursor:pointer;transition:all .2s;}
+.reset-btn:hover{color:var(--white);border-color:var(--purple);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">🔮 SIMULADOR DE PALPITES</div>
+  <a href="bolao_crq_2026.html" class="back-link">← VOLTAR AO BOLÃO</a>
+</div>
+
+<main>
+  <div class="page-header">
+    <h1>SIMULE OS PLACARES <span>DE HOJE</span></h1>
+    <p>Digite os placares dos jogos do dia e veja o Top 3 projetado. Isso é só uma simulação — não afeta a pontuação real do bolão.</p>
+  </div>
+  <div id="content"><div class="loading">Carregando dados do bolão...</div></div>
+  <button class="reset-btn" onclick="resetSim()">↺ LIMPAR SIMULAÇÃO</button>
+</main>
+
+<script>
+// ── FIREBASE CONFIG ──
+const firebaseConfig = {
+  apiKey: "AIzaSyDKFfrS-SVBhQUBbJr0QrYCoLNEG7MTTyA",
+  authDomain: "bolao-crq-2026.firebaseapp.com",
+  projectId: "bolao-crq-2026",
+  storageBucket: "bolao-crq-2026.firebasestorage.app",
+  messagingSenderId: "363674646815",
+  appId: "1:363674646815:web:eab23d2f79e66ffee4182a"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const PTS={EXATO:50,VENC_GOL:40,RESULTADO:30,GOL_UM:10,PP:20};
+let participants = [];
+let results = {};
+let simPlacar = {};
+
+function initials(nome){const p=nome.trim().split(' ').filter(Boolean);return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():p[0]?.[0]?.toUpperCase()||'?';}
+
+function calcScore(p){
+  let total=0;
+  for(const j of p.jogos){
+    const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;
+    const res=results[key];
+    if(!res||res.golsM===null||res.golsV===null)continue;
+    if(j.golsM===null||j.golsV===null)continue;
+    const pM=j.golsM,pV=j.golsV,rM=Number(res.golsM),rV=Number(res.golsV);
+    if(pM===rM&&pV===rV){total+=PTS.EXATO;}
+    else{
+      const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E',ok=rv===pv,aM=pM===rM,aV=pV===rV;
+      if(ok&&(aM||aV)){total+=PTS.VENC_GOL;}
+      else if(ok){total+=PTS.RESULTADO;}
+      else if(aM||aV){total+=PTS.GOL_UM;}
+    }
+    if(j.fase!=='grupos'){
+      if(res.mandante&&j.mandante===res.mandante)total+=PTS.PP;
+      if(res.visitante&&j.visitante===res.visitante)total+=PTS.PP;
+    }
+  }
+  return total;
+}
+
+function calcPtsSimulado(j, simResults){
+  const key = j.fase==='grupos' ? `g${j.idx}` : `mm${j.jogo}`;
+  const r = simResults[key];
+  if(!r || r.gM===null || r.gV===null || j.golsM===null || j.golsV===null) return null;
+  const pM=j.golsM, pV=j.golsV, rM=Number(r.gM), rV=Number(r.gV);
+  if(pM===rM && pV===rV) return 50;
+  const rv=rM>rV?'M':rM<rV?'V':'E', pv=pM>pV?'M':pM<pV?'V':'E';
+  if(rv===pv && (pM===rM||pV===rV)) return 40;
+  if(rv===pv) return 30;
+  if(pM===rM||pV===rV) return 10;
+  return 0;
+}
+
+function getPtsReal(j,key){
+  const r=results[key];
+  if(!r||r.golsM===null||r.golsV===null||j.golsM===null||j.golsV===null)return 0;
+  const pM=j.golsM,pV=j.golsV,rM=Number(r.golsM),rV=Number(r.golsV);
+  if(pM===rM&&pV===rV)return 50;
+  const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E';
+  if(rv===pv&&(pM===rM||pV===rV))return 40;
+  if(rv===pv)return 30;
+  if(pM===rM||pV===rV)return 10;
+  return 0;
+}
+
+function calcScoreSim(p, jogosHojeSet){
+  let base = calcScore(p);
+  for(const j of p.jogos){
+    const key = j.fase==='grupos' ? `g${j.idx}` : `mm${j.jogo}`;
+    if(!jogosHojeSet.has(key)) continue;
+    const r = results[key];
+    if(r && r.golsM!==null && r.golsV!==null) {
+      base -= getPtsReal(j, key);
+    }
+  }
+  let simExtra = 0;
+  for(const j of p.jogos){
+    const key = j.fase==='grupos' ? `g${j.idx}` : `mm${j.jogo}`;
+    if(!jogosHojeSet.has(key)) continue;
+    const pts = calcPtsSimulado(j, simPlacar);
+    if(pts !== null) simExtra += pts;
+  }
+  return {total: base + simExtra, simExtra};
+}
+
+function buildDatasJogos(){
+  const d = {};
+  const r1 = [
+    [1,'2026-06-11'],[2,'2026-06-12'],
+    [3,'2026-06-12'],[4,'2026-06-13'],
+    [5,'2026-06-13'],[6,'2026-06-13'],
+    [7,'2026-06-14'],[8,'2026-06-14'],[9,'2026-06-14'],
+    [10,'2026-06-14'],[11,'2026-06-14'],[12,'2026-06-14'],
+    [13,'2026-06-15'],[14,'2026-06-15'],[15,'2026-06-15'],[16,'2026-06-15'],
+    [17,'2026-06-16'],[18,'2026-06-16'],[19,'2026-06-16'],
+    [20,'2026-06-17'],[21,'2026-06-17'],[22,'2026-06-17'],[23,'2026-06-17'],[24,'2026-06-17'],
+  ];
+  const r2 = [
+    [25,'2026-06-18'],[26,'2026-06-18'],[27,'2026-06-18'],[28,'2026-06-18'],
+    [29,'2026-06-19'],[30,'2026-06-19'],[31,'2026-06-19'],[32,'2026-06-19'],
+    [33,'2026-06-20'],[34,'2026-06-20'],[35,'2026-06-20'],[36,'2026-06-20'],
+    [37,'2026-06-21'],[38,'2026-06-21'],[39,'2026-06-21'],[40,'2026-06-21'],
+    [41,'2026-06-22'],[42,'2026-06-22'],[43,'2026-06-22'],[44,'2026-06-22'],
+    [45,'2026-06-23'],[46,'2026-06-23'],[47,'2026-06-23'],[48,'2026-06-23'],
+  ];
+  const r3 = [
+    [49,'2026-06-24'],[50,'2026-06-24'],[51,'2026-06-24'],[52,'2026-06-24'],
+    [53,'2026-06-24'],[54,'2026-06-24'],[55,'2026-06-24'],[56,'2026-06-24'],
+    [57,'2026-06-25'],[58,'2026-06-25'],[59,'2026-06-25'],[60,'2026-06-25'],
+    [61,'2026-06-25'],[62,'2026-06-25'],[63,'2026-06-25'],[64,'2026-06-25'],
+    [65,'2026-06-26'],[66,'2026-06-26'],[67,'2026-06-26'],[68,'2026-06-26'],
+    [69,'2026-06-27'],[70,'2026-06-27'],[71,'2026-06-27'],[72,'2026-06-27'],
+  ];
+  for(const [idx,ds] of [...r1,...r2,...r3]) d[`g${idx}`]=new Date(ds+'T15:00:00Z');
+  const elim = [
+    [73,'2026-06-28'],[74,'2026-06-28'],[75,'2026-06-29'],[76,'2026-06-29'],
+    [77,'2026-06-29'],[78,'2026-06-29'],[79,'2026-06-30'],[80,'2026-06-30'],
+    [81,'2026-06-30'],[82,'2026-06-30'],[83,'2026-07-01'],[84,'2026-07-01'],
+    [85,'2026-07-01'],[86,'2026-07-01'],[87,'2026-07-02'],[88,'2026-07-02'],
+    [89,'2026-07-02'],[90,'2026-07-02'],[91,'2026-07-03'],[92,'2026-07-03'],
+    [93,'2026-07-04'],[94,'2026-07-04'],[95,'2026-07-05'],[96,'2026-07-05'],
+    [97,'2026-07-06'],[98,'2026-07-06'],[99,'2026-07-07'],[100,'2026-07-07'],
+    [101,'2026-07-09'],[102,'2026-07-09'],[103,'2026-07-10'],[104,'2026-07-10'],
+    [105,'2026-07-14'],[106,'2026-07-15'],
+    [107,'2026-07-18'],[108,'2026-07-19'],
+  ];
+  for(const [jn,ds] of elim) d[`mm${jn}`]=new Date(ds+'T15:00:00Z');
+  return d;
+}
+
+function getJogosHoje(){
+  const agora = new Date();
+  const hojeStr = agora.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'});
+  const DATAS_JOGOS = buildDatasJogos();
+  const jogosHoje = [];
+  for(const [key, dataJogo] of Object.entries(DATAS_JOGOS)){
+    const dStr = dataJogo.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'});
+    if(dStr === hojeStr) jogosHoje.push(key);
+  }
+  return jogosHoje;
+}
+
+function render(){
+  const el = document.getElementById('content');
+  if(!participants.length){
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div>Nenhum palpite carregado ainda no bolão.</div></div>`;
+    return;
+  }
+  const jogosHoje = getJogosHoje();
+  if(!jogosHoje.length){
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><div>Nenhum jogo programado para hoje.</div></div>`;
+    return;
+  }
+  const jogosHojeSet = new Set(jogosHoje);
+
+  const jogoInfos = jogosHoje.map(key=>{
+    let mandante='?', visitante='?';
+    for(const p of participants){
+      const j = key.startsWith('g')
+        ? p.jogos.find(j=>j.fase==='grupos'&&`g${j.idx}`===key)
+        : p.jogos.find(j=>j.fase!=='grupos'&&`mm${j.jogo}`===key);
+      if(j){mandante=j.mandante; visitante=j.visitante; break;}
+    }
+    const real = results[key];
+    const temReal = real && real.golsM!==null && real.golsV!==null;
+    if(temReal && simPlacar[key]===undefined){
+      simPlacar[key] = {gM: Number(real.golsM), gV: Number(real.golsV)};
+    }
+    return {key, mandante, visitante, temReal, real};
+  });
+
+  let matchesHTML = jogoInfos.map((info,idx)=>{
+    const cur = simPlacar[info.key];
+    const gM = (cur && cur.gM!==null && cur.gM!==undefined) ? cur.gM : '';
+    const gV = (cur && cur.gV!==null && cur.gV!==undefined) ? cur.gV : '';
+    const hasResult = cur && cur.gM!==null && cur.gV!==null && cur.gM!==undefined && cur.gV!==undefined;
+    const realBadge = info.temReal
+      ? `<div class="sim-real-badge">✅ RESULTADO REAL: ${info.real.golsM} x ${info.real.golsV}</div>` : '';
+    return `<div class="sim-match${hasResult?' has-result':''}" id="sim-match-${idx}">
+      <div class="sim-teams">
+        <span class="sim-team">${info.mandante}</span>
+        <span class="sim-vs">VS</span>
+        <span class="sim-team right">${info.visitante}</span>
+      </div>
+      <div class="sim-inputs">
+        <input class="sim-score-input" type="number" min="0" max="20" value="${gM}"
+          placeholder="0" oninput="simUpdate('${info.key}','M',this.value,${idx})" id="sim-m-${idx}">
+        <span class="sim-dash">×</span>
+        <input class="sim-score-input" type="number" min="0" max="20" value="${gV}"
+          placeholder="0" oninput="simUpdate('${info.key}','V',this.value,${idx})" id="sim-v-${idx}">
+      </div>
+      ${realBadge}
+    </div>`;
+  }).join('');
+
+  const podioHTML = buildSimPodium(jogosHojeSet);
+
+  el.innerHTML = `<div class="sim-wrapper">
+    <div class="sim-matches">${matchesHTML}</div>
+    <div class="sim-podium">
+      <div class="sim-podium-title">🏆 TOP 3 PROJETADO</div>
+      <div id="sim-podium-inner">${podioHTML}</div>
+      <div class="sim-hint">Preencha os placares à esquerda para atualizar a projeção</div>
+    </div>
+  </div>`;
+}
+
+function buildSimPodium(jogosHojeSet){
+  const algumPlacar = Object.keys(simPlacar).some(k=>{
+    const s=simPlacar[k]; return s && s.gM!==null && s.gV!==null && s.gM!==undefined && s.gV!==undefined;
+  });
+  if(!algumPlacar) return `<div class="sim-podium-empty">Digite um placar ao lado<br>para ver a projeção</div>`;
+
+  const ranked = participants.map(p=>{
+    const sim = calcScoreSim(p, jogosHojeSet);
+    return {nome:p.nome, total:sim.total, simExtra:sim.simExtra};
+  }).sort((a,b)=>b.total-a.total);
+
+  const top3 = ranked.slice(0,3);
+  const avatarCls = ['av1','av2','av3'];
+  const medalha = ['🥇','🥈','🥉'];
+
+  return top3.map((p,i)=>{
+    const delta = p.simExtra > 0
+      ? `<span class="sim-rank-delta up">+${p.simExtra} pts hoje</span>`
+      : `<span class="sim-rank-delta same">sem ganhos hoje</span>`;
+    const nomeParts = p.nome.split(' ');
+    const nomeShort = nomeParts.length>1 ? `${nomeParts[0]} ${nomeParts[nomeParts.length-1]}` : p.nome;
+    return `<div class="sim-rank-row">
+      <span class="sim-rank-pos">${medalha[i]}</span>
+      <div class="sim-rank-avatar ${avatarCls[i]}">${initials(p.nome)}</div>
+      <div class="sim-rank-info">
+        <div class="sim-rank-name">${nomeShort}</div>
+        ${delta}
+      </div>
+      <div style="text-align:right">
+        <span class="sim-rank-total" style="color:${i===0?'#FFB800':i===1?'#aaa':'#cd7f32'}">${p.total}</span>
+        <div class="sim-rank-pts-label">pts</div>
+      </div>
+    </div>`;
+  }).join('<div class="sim-separator"></div>');
+}
+
+function simUpdate(key, lado, val, idx){
+  if(!simPlacar[key]) simPlacar[key] = {gM:null, gV:null};
+  const v = val==='' ? null : Math.max(0,parseInt(val)||0);
+  if(lado==='M') simPlacar[key].gM = v;
+  else simPlacar[key].gV = v;
+
+  const card = document.getElementById(`sim-match-${idx}`);
+  if(card){
+    const s=simPlacar[key];
+    if(s&&s.gM!==null&&s.gV!==null) card.classList.add('has-result');
+    else card.classList.remove('has-result');
+  }
+  const jogosHoje = getJogosHoje();
+  const inner = document.getElementById('sim-podium-inner');
+  if(inner) inner.innerHTML = buildSimPodium(new Set(jogosHoje));
+}
+
+function resetSim(){
+  simPlacar = {};
+  render();
+}
+
+async function loadData(){
+  try{
+    const pSnap = await db.collection('bolao').doc('participants').get();
+    participants = pSnap.exists ? JSON.parse(pSnap.data().data||'[]') : [];
+    const rSnap = await db.collection('bolao').doc('results').get();
+    results = rSnap.exists ? JSON.parse(rSnap.data().data||'{}') : {};
+  }catch(e){
+    document.getElementById('content').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div>Erro ao carregar dados: ${e.message}</div></div>`;
+    return;
+  }
+  render();
+}
+
+loadData();
+</script>
+</body>
+</html>
