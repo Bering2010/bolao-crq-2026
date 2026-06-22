@@ -208,30 +208,14 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padd
   <div class="nav-inner">
     <div class="nav-logo"><div class="nav-dot"></div>BOLÃO CRQ 2026</div>
     <ul class="nav-links">
-      <li><a href="#upload-section">Upload</a></li>
       <li><a href="#ranking-section">Ranking</a></li>
       <li><a href="#stats-section">Estatísticas</a></li>
+      <li><a href="#upload-section">Upload</a></li>
       <li><a href="admin_resultados.html">Resultados</a></li>
     </ul>
   </div>
 </nav>
 <main>
-  <section id="upload-section" style="margin-bottom:5rem;">
-    <div class="section-header">
-      <div class="section-tag">Participantes</div>
-      <h2 class="section-title">Carregar <span>Planilhas</span></h2>
-      <p style="color:var(--grey);font-size:0.9rem;margin-top:0.8rem;">Faça upload dos arquivos Excel de cada palpiteiro</p>
-      <div class="section-line"></div>
-    </div>
-    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
-      <div class="upload-icon">📂</div>
-      <div class="upload-title">Arraste os arquivos aqui</div>
-      <div class="upload-subtitle">ou clique para selecionar — múltiplos arquivos suportados</div>
-      <button class="upload-btn" onclick="event.stopPropagation();document.getElementById('file-input').click()">📥 Selecionar Arquivos Excel</button>
-      <input type="file" id="file-input" accept=".xlsx" multiple>
-    </div>
-    <div id="participants-list" style="margin-top:2rem;"></div>
-  </section>
   <section id="ranking-section" style="margin-bottom:5rem;">
     <div class="section-header">
       <div class="section-tag">Classificação</div>
@@ -261,6 +245,22 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padd
       <p style="color:var(--grey);font-size:0.85rem;margin-bottom:1.2rem;">Indicadores gerais com todos os jogos já resultados</p>
       <div id="dashboard-content"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-text">Carregue as planilhas para ver os destaques</div></div></div>
     </div>
+  </section>
+  <section id="upload-section" style="margin-bottom:5rem;">
+    <div class="section-header">
+      <div class="section-tag">Participantes</div>
+      <h2 class="section-title">Carregar <span>Planilhas</span></h2>
+      <p style="color:var(--grey);font-size:0.9rem;margin-top:0.8rem;">Faça upload dos arquivos Excel de cada palpiteiro</p>
+      <div class="section-line"></div>
+    </div>
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+      <div class="upload-icon">📂</div>
+      <div class="upload-title">Arraste os arquivos aqui</div>
+      <div class="upload-subtitle">ou clique para selecionar — múltiplos arquivos suportados</div>
+      <button class="upload-btn" onclick="event.stopPropagation();document.getElementById('file-input').click()">📥 Selecionar Arquivos Excel</button>
+      <input type="file" id="file-input" accept=".xlsx" multiple>
+    </div>
+    <div id="participants-list" style="margin-top:2rem;"></div>
   </section>
 </main>
 <footer>
