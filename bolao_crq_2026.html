@@ -248,7 +248,10 @@ footer{position:relative;z-index:1;border-top:1px solid rgba(255,184,0,0.1);padd
     </div>
 
     <div style="margin-bottom:2.5rem;">
-      <h3 style="font-family:'Orbitron',monospace;font-size:1rem;color:var(--cyan);letter-spacing:.1em;margin-bottom:.4rem;">📅 JOGOS DO DIA</h3>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:.4rem;">
+        <h3 style="font-family:'Orbitron',monospace;font-size:1rem;color:var(--cyan);letter-spacing:.1em;margin:0;">📅 JOGOS DO DIA</h3>
+        <a href="simulador.html" target="_blank" style="display:inline-flex;align-items:center;gap:.5rem;background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff;font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;letter-spacing:.08em;padding:.55rem 1.1rem;text-decoration:none;border-radius:4px;box-shadow:0 4px 14px rgba(167,139,250,0.35);transition:transform .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">🔮 SIMULAR PALPITES</a>
+      </div>
       <p style="color:var(--grey);font-size:0.85rem;margin-bottom:1.2rem;">Passe o mouse num placar para ver os nomes dos palpiteiros</p>
       <div id="stats-content"><div class="empty-state"><div class="empty-icon">📅</div><div class="empty-text">Carregue as planilhas para ver os palpites do dia</div></div></div>
     </div>
