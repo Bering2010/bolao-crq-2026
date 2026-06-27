@@ -290,6 +290,28 @@ const db = firebase.firestore();
 
 const PTS={EXATO:50,VENC_GOL:40,RESULTADO:30,GOL_UM:10,PP:20,CAMP:300,VICE:200,TER:100,QUA:50};
 
+// ── MAPA OFICIAL DO CHAVEAMENTO — 16 avos de final (jogos 73-88) ──
+// Baseado na aba "Jogos MM" do regulamento oficial. "3º(...)" = vaga de 3º colocado entre os grupos listados.
+const CHAVE_R32 = {
+  73:{home:{tipo:'pos',grupo:'A',pos:2},away:{tipo:'pos',grupo:'B',pos:2}},
+  76:{home:{tipo:'pos',grupo:'C',pos:1},away:{tipo:'pos',grupo:'F',pos:2}},
+  74:{home:{tipo:'pos',grupo:'E',pos:1},away:{tipo:'terceiro',grupos:['A','B','C','D','F']}},
+  75:{home:{tipo:'pos',grupo:'F',pos:1},away:{tipo:'pos',grupo:'C',pos:2}},
+  78:{home:{tipo:'pos',grupo:'E',pos:2},away:{tipo:'pos',grupo:'I',pos:2}},
+  77:{home:{tipo:'pos',grupo:'I',pos:1},away:{tipo:'terceiro',grupos:['C','D','F','G','H']}},
+  79:{home:{tipo:'pos',grupo:'A',pos:1},away:{tipo:'terceiro',grupos:['C','E','F','H','I']}},
+  80:{home:{tipo:'pos',grupo:'L',pos:1},away:{tipo:'terceiro',grupos:['E','H','I','J','K']}},
+  82:{home:{tipo:'pos',grupo:'G',pos:1},away:{tipo:'terceiro',grupos:['A','E','H','I','J']}},
+  81:{home:{tipo:'pos',grupo:'D',pos:1},away:{tipo:'terceiro',grupos:['B','E','F','I','J']}},
+  84:{home:{tipo:'pos',grupo:'H',pos:1},away:{tipo:'pos',grupo:'J',pos:2}},
+  83:{home:{tipo:'pos',grupo:'K',pos:2},away:{tipo:'pos',grupo:'L',pos:2}},
+  85:{home:{tipo:'pos',grupo:'B',pos:1},away:{tipo:'terceiro',grupos:['E','F','G','I','J']}},
+  88:{home:{tipo:'pos',grupo:'D',pos:2},away:{tipo:'pos',grupo:'G',pos:2}},
+  86:{home:{tipo:'pos',grupo:'J',pos:1},away:{tipo:'pos',grupo:'H',pos:2}},
+  87:{home:{tipo:'pos',grupo:'K',pos:1},away:{tipo:'terceiro',grupos:['D','E','I','J','L']}},
+};
+
+
 // Fases/rodadas para ranking por fase
 // Rodada 1: jogos grupos idx 1-24 (11/06 a 17/06)
 // Rodada 2: jogos grupos idx 25-48 (18/06 a 23/06)  
@@ -381,12 +403,131 @@ async function loadState(){
 }
 function initials(nome){const p=nome.trim().split(' ').filter(Boolean);return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():p[0]?.[0]?.toUpperCase()||'?';}
 function readExcel(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'binary'});const ps=wb.Sheets['PDF Palpites'];const nome=ps?(XLSX.utils.sheet_to_json(ps,{header:1})[1]?.[2]||file.name):file.name;const email=ps?(XLSX.utils.sheet_to_json(ps,{header:1})[2]?.[5]||''):'';const sheet=wb.Sheets['Meus Pontos'];if(!sheet){rej(new Error('Aba "Meus Pontos" não encontrada'));return;}const data=XLSX.utils.sheet_to_json(sheet,{header:1,defval:null});const jogos=[];for(let i=6;i<=77;i++){const row=data[i];if(!row)continue;const grupo=row[4],mand=row[5],visit=row[7],gM=row[8],gV=row[10];if(!mand||!visit)continue;jogos.push({idx:i-6+1,grupo:String(grupo||'?'),mandante:String(mand).trim(),visitante:String(visit).trim(),golsM:gM!==null?Number(gM):null,golsV:gV!==null?Number(gV):null,fase:'grupos',jogo:null});}for(let i=80;i<=121;i++){const row=data[i];if(!row)continue;const jn=row[4],mand=row[5],visit=row[7],gM=row[8],gV=row[10];if(!jn||isNaN(Number(jn))||!mand||!visit)continue;const num=Number(jn);let fase='dezesseis';if(num>=89&&num<=96)fase='oitavasReal';else if(num>=97&&num<=100)fase='quartasReal';else if(num===101||num===102)fase='semisReal';else if(num===103)fase='terceiro';else if(num===104)fase='final';jogos.push({idx:null,jogo:num,grupo:null,mandante:String(mand).trim(),visitante:String(visit).trim(),golsM:gM!==null?Number(gM):null,golsV:gV!==null?Number(gV):null,fase});}res({nome:String(nome).trim(),email:String(email).trim(),jogos});}catch(err){rej(err);}};r.onerror=()=>rej(new Error('Falha ao ler'));r.readAsBinaryString(file);});}
+// ── CLASSIFICAÇÃO DE GRUPO (palpitada) — Regras oficiais FIFA 2026 ──
+// Critério: Pontos -> [confronto direto: pts, SG, GP] -> [geral: SG, GP]
+function calcClassificacaoGrupo(p, grupoLetra){
+  const jogosGrupo = p.jogos.filter(j=>j.fase==='grupos' && j.grupo===grupoLetra && j.golsM!==null && j.golsV!==null);
+  if(!jogosGrupo.length) return null;
+  const times = new Set();
+  jogosGrupo.forEach(j=>{times.add(j.mandante); times.add(j.visitante);});
+  if(times.size<4) return null; // grupo incompleto no palpite
+
+  const stats = {};
+  times.forEach(t=>{stats[t]={nome:t,pts:0,gp:0,gc:0,jg:0};});
+
+  jogosGrupo.forEach(j=>{
+    const gM=Number(j.golsM), gV=Number(j.golsV);
+    stats[j.mandante].jg++; stats[j.visitante].jg++;
+    stats[j.mandante].gp+=gM; stats[j.mandante].gc+=gV;
+    stats[j.visitante].gp+=gV; stats[j.visitante].gc+=gM;
+    if(gM>gV){stats[j.mandante].pts+=3;}
+    else if(gM<gV){stats[j.visitante].pts+=3;}
+    else{stats[j.mandante].pts+=1; stats[j.visitante].pts+=1;}
+  });
+
+  // Função auxiliar: estatísticas de confronto direto entre um subconjunto de times
+  function statsConfrontoDireto(nomesTimes){
+    const h2h = {};
+    nomesTimes.forEach(t=>{h2h[t]={pts:0,gp:0,gc:0};});
+    jogosGrupo.forEach(j=>{
+      if(!nomesTimes.includes(j.mandante) || !nomesTimes.includes(j.visitante)) return;
+      const gM=Number(j.golsM), gV=Number(j.golsV);
+      h2h[j.mandante].gp+=gM; h2h[j.mandante].gc+=gV;
+      h2h[j.visitante].gp+=gV; h2h[j.visitante].gc+=gM;
+      if(gM>gV) h2h[j.mandante].pts+=3;
+      else if(gM<gV) h2h[j.visitante].pts+=3;
+      else{h2h[j.mandante].pts+=1; h2h[j.visitante].pts+=1;}
+    });
+    return h2h;
+  }
+
+  // Ordena um grupo de times empatados em pontos, aplicando confronto direto recursivamente
+  function ordenarEmpatados(nomesTimes){
+    if(nomesTimes.length<=1) return nomesTimes;
+    const h2h = statsConfrontoDireto(nomesTimes);
+    // Critério 1-3: pts H2H, SG H2H, GP H2H
+    const comH2H = nomesTimes.map(t=>({
+      t, ptsH2H:h2h[t].pts, sgH2H:h2h[t].gp-h2h[t].gc, gpH2H:h2h[t].gp,
+      sgGeral: stats[t].gp-stats[t].gc, gpGeral: stats[t].gp
+    }));
+    comH2H.sort((a,b)=>{
+      if(b.ptsH2H!==a.ptsH2H) return b.ptsH2H-a.ptsH2H;
+      if(b.sgH2H!==a.sgH2H) return b.sgH2H-a.sgH2H;
+      if(b.gpH2H!==a.gpH2H) return b.gpH2H-a.gpH2H;
+      // Critério 4-5: SG geral, GP geral (sem H2H pra decidir)
+      if(b.sgGeral!==a.sgGeral) return b.sgGeral-a.sgGeral;
+      return b.gpGeral-a.gpGeral;
+    });
+    // Re-agrupa por empates residuais (mesmo ptsH2H/sgH2H/gpH2H/sgGeral/gpGeral) -> ordem por nome (estável)
+    return comH2H.map(x=>x.t);
+  }
+
+  // Ordena times por pontos gerais primeiro, agrupando empatados pra aplicar H2H
+  const todosOrdenados = Object.values(stats).sort((a,b)=>b.pts-a.pts);
+  const resultado = [];
+  let i=0;
+  while(i<todosOrdenados.length){
+    let j=i;
+    while(j<todosOrdenados.length && todosOrdenados[j].pts===todosOrdenados[i].pts) j++;
+    const grupoEmpatado = todosOrdenados.slice(i,j).map(s=>s.nome);
+    const ordenado = ordenarEmpatados(grupoEmpatado);
+    ordenado.forEach(nome=>resultado.push(stats[nome]));
+    i=j;
+  }
+
+  return resultado; // [1º, 2º, 3º, 4º] com {nome,pts,gp,gc,jg}
+}
+
+// Calcula os 8 melhores terceiros colocados entre os 12 grupos (palpitados)
+function calcMelhoresTerceiros(p){
+  const grupos = [...new Set(p.jogos.filter(j=>j.fase==='grupos').map(j=>j.grupo))];
+  const terceiros = [];
+  for(const g of grupos){
+    const classif = calcClassificacaoGrupo(p, g);
+    if(classif && classif.length===4){
+      terceiros.push({...classif[2], grupo:g});
+    }
+  }
+  // Critério entre terceiros: pts -> SG -> GP (sem confronto direto, grupos diferentes)
+  terceiros.sort((a,b)=>{
+    if(b.pts!==a.pts) return b.pts-a.pts;
+    const sgA=a.gp-a.gc, sgB=b.gp-b.gc;
+    if(sgB!==sgA) return sgB-sgA;
+    return b.gp-a.gp;
+  });
+  return terceiros.slice(0,8); // 8 melhores
+}
+
+// Calcula o bônus PP da fase de grupos (6.1 do regulamento): 20pts por seleção corretamente
+// posicionada (1º-4º) dentro do grupo, comparado com a classificação OFICIAL (em results.classificacaoOficial)
+function calcBonusGrupoPP(p){
+  const oficial = (typeof results!=='undefined' && results.classificacaoOficial) ? results.classificacaoOficial : null;
+  if(!oficial) return 0;
+  let bonus = 0;
+  const grupos = [...new Set(p.jogos.filter(j=>j.fase==='grupos').map(j=>j.grupo))];
+  for(const g of grupos){
+    const classifPalpitada = calcClassificacaoGrupo(p, g);
+    const classifOficial = oficial[g];
+    if(!classifPalpitada || !classifOficial) continue;
+    for(let pos=0; pos<4; pos++){
+      if(classifPalpitada[pos] && classifOficial[pos] && classifPalpitada[pos].nome===classifOficial[pos]) bonus += PTS.PP;
+    }
+  }
+  return bonus;
+}
+
 function calcScoreFiltered(p, filterFn){
-  let total=0,exatos=0,p40=0,p30=0,p10=0,p0=0,avaliados=0;
+  let total=0,exatos=0,p40=0,p30=0,p10=0,p0=0,avaliados=0,bonus=0;
   const jogos = filterFn ? p.jogos.filter(filterFn) : p.jogos;
-  for(const j of jogos){const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;const res=results[key];if(!res||res.golsM===null||res.golsV===null)continue;if(j.golsM===null||j.golsV===null)continue;avaliados++;const pM=j.golsM,pV=j.golsV,rM=Number(res.golsM),rV=Number(res.golsV);if(pM===rM&&pV===rV){total+=PTS.EXATO;exatos++;}else{const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E',ok=rv===pv,aM=pM===rM,aV=pV===rV;if(ok&&(aM||aV)){total+=PTS.VENC_GOL;p40++;}else if(ok){total+=PTS.RESULTADO;p30++;}else if(aM||aV){total+=PTS.GOL_UM;p10++;}else{p0++;}}if(j.fase!=='grupos'){if(res.mandante&&j.mandante===res.mandante)total+=PTS.PP;if(res.visitante&&j.visitante===res.visitante)total+=PTS.PP;}}
+  for(const j of jogos){const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;const res=results[key];if(!res||res.golsM===null||res.golsV===null)continue;if(j.golsM===null||j.golsV===null)continue;avaliados++;const pM=j.golsM,pV=j.golsV,rM=Number(res.golsM),rV=Number(res.golsV);if(pM===rM&&pV===rV){total+=PTS.EXATO;exatos++;}else{const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E',ok=rv===pv,aM=pM===rM,aV=pV===rV;if(ok&&(aM||aV)){total+=PTS.VENC_GOL;p40++;}else if(ok){total+=PTS.RESULTADO;p30++;}else if(aM||aV){total+=PTS.GOL_UM;p10++;}else{p0++;}}if(j.fase!=='grupos'){if(res.mandante&&j.mandante===res.mandante){total+=PTS.PP;bonus+=PTS.PP;}if(res.visitante&&j.visitante===res.visitante){total+=PTS.PP;bonus+=PTS.PP;}}}
+  // Bônus PP da fase de grupos (6.1) — só no cálculo geral (sem filtro de fase), pois depende da fase de grupos completa
+  if(!filterFn){
+    const bonusGrupo = calcBonusGrupoPP(p);
+    total += bonusGrupo;
+    bonus += bonusGrupo;
+  }
   const pct=n=>avaliados>0?Math.round(n/avaliados*100):0;
-  return{total,exatos,p40,p30,p10,p0,avaliados,pctExatos:pct(exatos),pctP40:pct(p40),pctP30:pct(p30),pctP10:pct(p10),pctP0:pct(p0)};}
+  return{total,exatos,p40,p30,p10,p0,avaliados,bonus,pctExatos:pct(exatos),pctP40:pct(p40),pctP30:pct(p30),pctP10:pct(p10),pctP0:pct(p0)};}
 function calcScore(p){ return calcScoreFiltered(p, null); }
 function calcScorePhase(p, filterFn){ return calcScoreFiltered(p, filterFn); }
 function getPts(j,key){const r=results[key];if(!r||r.golsM===null||r.golsV===null||j.golsM===null||j.golsV===null)return null;const pM=j.golsM,pV=j.golsV,rM=Number(r.golsM),rV=Number(r.golsV);if(pM===rM&&pV===rV)return 50;const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E';if(rv===pv&&(pM===rM||pV===rV))return 40;if(rv===pv)return 30;if(pM===rM||pV===rV)return 10;return 0;}
@@ -397,7 +538,7 @@ function renderRanking(){const el=document.getElementById('ranking-content');if(
     if(b.score.exatos!==a.score.exatos) return b.score.exatos-a.score.exatos;
     if(b.score.p40!==a.score.p40) return b.score.p40-a.score.p40;
     return b.score.p30-a.score.p30;
-  });const max=scored[0]?.score.total||1;document.getElementById('stat-l').textContent=max;const podHTML=`<div class="podium">${scored[1]?`<div class="podium-card p2 fade-in" style="animation-delay:0.15s" onclick="openModal(${scored[1].i})"><div class="podium-avatar">${initials(scored[1].nome)}<div class="podium-pos">2</div></div><div class="podium-name">${scored[1].nome}</div><span class="podium-score">${scored[1].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[1].score.exatos}×50</span><span class="badge">🎯${scored[1].score.p40}×40</span><span class="badge">✅${scored[1].score.p30}×30</span><span class="badge">🔹${scored[1].score.p10}×10</span><span class="badge">⬛${scored[1].score.p0}×0</span></div></div>`:''}${scored[0]?`<div class="podium-card p1 fade-in" style="animation-delay:0.05s" onclick="openModal(${scored[0].i})"><span class="podium-crown">👑</span><div class="podium-avatar">${initials(scored[0].nome)}<div class="podium-pos">1</div></div><div class="podium-name">${scored[0].nome}</div><span class="podium-score">${scored[0].score.total}</span><div class="podium-label">pontos · LÍDER</div><div class="podium-badges"><span class="badge">⚽${scored[0].score.exatos}×50</span><span class="badge">🎯${scored[0].score.p40}×40</span><span class="badge">✅${scored[0].score.p30}×30</span><span class="badge">🔹${scored[0].score.p10}×10</span><span class="badge">⬛${scored[0].score.p0}×0</span></div></div>`:''} ${scored[2]?`<div class="podium-card p3 fade-in" style="animation-delay:0.25s" onclick="openModal(${scored[2].i})"><div class="podium-avatar">${initials(scored[2].nome)}<div class="podium-pos">3</div></div><div class="podium-name">${scored[2].nome}</div><span class="podium-score">${scored[2].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[2].score.exatos}×50</span><span class="badge">🎯${scored[2].score.p40}×40</span><span class="badge">✅${scored[2].score.p30}×30</span><span class="badge">🔹${scored[2].score.p10}×10</span><span class="badge">⬛${scored[2].score.p0}×0</span></div></div>`:''}</div>`;const tableHTML=`<div class="rank-table-wrap fade-in" style="animation-delay:0.3s"><table class="rank-table"><thead><tr><th>#</th><th>Palpiteiro</th><th style="text-align:right">Pontos</th><th style="text-align:center">50pts</th><th style="text-align:center">40pts</th><th style="text-align:center">30pts</th><th style="text-align:center">10pts</th><th style="text-align:center">0pts</th><th>Progresso</th></tr></thead><tbody>${scored.map((p,rank)=>`<tr onclick="openModal(${p.i})" style="cursor:pointer"><td><div class="rpos ${rank===0?'t1':rank===1?'t2':rank===2?'t3':''}">${rank+1}º</div></td><td><div class="rname-col"><div class="ravatar">${initials(p.nome)}</div><div><div class="rname">${p.nome}</div><div style="font-size:0.7rem;color:var(--grey)">${p.email||'—'}</div></div></div></td><td class="rscore">${p.score.total}</td><td style="text-align:center;color:var(--green);font-size:0.75rem">${p.score.exatos}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctExatos}%</span></td><td style="text-align:center;color:var(--cyan);font-size:0.75rem">${p.score.p40}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP40}%</span></td><td style="text-align:center;color:var(--gold);font-size:0.75rem">${p.score.p30}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP30}%</span></td><td style="text-align:center;color:#999;font-size:0.75rem">${p.score.p10}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP10}%</span></td><td style="text-align:center;color:var(--red);font-size:0.75rem">${p.score.p0}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP0}%</span></td><td><div class="rbar-wrap"><div class="rbar" style="width:${max>0?Math.round(p.score.total/max*100):0}%"></div></div></td></tr>`).join('')}</tbody></table></div>`;el.innerHTML=podHTML+tableHTML+renderLideres();}
+  });const max=scored[0]?.score.total||1;document.getElementById('stat-l').textContent=max;const podHTML=`<div class="podium">${scored[1]?`<div class="podium-card p2 fade-in" style="animation-delay:0.15s" onclick="openModal(${scored[1].i})"><div class="podium-avatar">${initials(scored[1].nome)}<div class="podium-pos">2</div></div><div class="podium-name">${scored[1].nome}</div><span class="podium-score">${scored[1].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[1].score.exatos}×50</span><span class="badge">🎯${scored[1].score.p40}×40</span><span class="badge">✅${scored[1].score.p30}×30</span><span class="badge">🔹${scored[1].score.p10}×10</span><span class="badge">⬛${scored[1].score.p0}×0</span></div></div>`:''}${scored[0]?`<div class="podium-card p1 fade-in" style="animation-delay:0.05s" onclick="openModal(${scored[0].i})"><span class="podium-crown">👑</span><div class="podium-avatar">${initials(scored[0].nome)}<div class="podium-pos">1</div></div><div class="podium-name">${scored[0].nome}</div><span class="podium-score">${scored[0].score.total}</span><div class="podium-label">pontos · LÍDER</div><div class="podium-badges"><span class="badge">⚽${scored[0].score.exatos}×50</span><span class="badge">🎯${scored[0].score.p40}×40</span><span class="badge">✅${scored[0].score.p30}×30</span><span class="badge">🔹${scored[0].score.p10}×10</span><span class="badge">⬛${scored[0].score.p0}×0</span></div></div>`:''} ${scored[2]?`<div class="podium-card p3 fade-in" style="animation-delay:0.25s" onclick="openModal(${scored[2].i})"><div class="podium-avatar">${initials(scored[2].nome)}<div class="podium-pos">3</div></div><div class="podium-name">${scored[2].nome}</div><span class="podium-score">${scored[2].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[2].score.exatos}×50</span><span class="badge">🎯${scored[2].score.p40}×40</span><span class="badge">✅${scored[2].score.p30}×30</span><span class="badge">🔹${scored[2].score.p10}×10</span><span class="badge">⬛${scored[2].score.p0}×0</span></div></div>`:''}</div>`;const tableHTML=`<div class="rank-table-wrap fade-in" style="animation-delay:0.3s"><table class="rank-table"><thead><tr><th>#</th><th>Palpiteiro</th><th style="text-align:right">Pontos</th><th style="text-align:center">Bônus</th><th style="text-align:center">50pts</th><th style="text-align:center">40pts</th><th style="text-align:center">30pts</th><th style="text-align:center">10pts</th><th style="text-align:center">0pts</th><th>Progresso</th></tr></thead><tbody>${scored.map((p,rank)=>`<tr onclick="openModal(${p.i})" style="cursor:pointer"><td><div class="rpos ${rank===0?'t1':rank===1?'t2':rank===2?'t3':''}">${rank+1}º</div></td><td><div class="rname-col"><div class="ravatar">${initials(p.nome)}</div><div><div class="rname">${p.nome}</div><div style="font-size:0.7rem;color:var(--grey)">${p.email||'—'}</div></div></div></td><td class="rscore">${p.score.total}</td><td style="text-align:center;color:#a78bfa;font-size:0.8rem;font-weight:700">${p.score.bonus>0?'+'+p.score.bonus:'—'}</td><td style="text-align:center;color:var(--green);font-size:0.75rem">${p.score.exatos}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctExatos}%</span></td><td style="text-align:center;color:var(--cyan);font-size:0.75rem">${p.score.p40}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP40}%</span></td><td style="text-align:center;color:var(--gold);font-size:0.75rem">${p.score.p30}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP30}%</span></td><td style="text-align:center;color:#999;font-size:0.75rem">${p.score.p10}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP10}%</span></td><td style="text-align:center;color:var(--red);font-size:0.75rem">${p.score.p0}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP0}%</span></td><td><div class="rbar-wrap"><div class="rbar" style="width:${max>0?Math.round(p.score.total/max*100):0}%"></div></div></td></tr>`).join('')}</tbody></table></div>`;el.innerHTML=podHTML+tableHTML+renderLideres();}
 
 function renderLideres(){
   if(!Object.keys(lideresGravados).length && !participants.length) return '';
@@ -499,6 +640,7 @@ function openFaseModal(faseId){
         </div>
       </td>
       <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Orbitron',monospace;font-weight:700;color:var(--gold);text-align:right;">${p.s.total}</td>
+      <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;color:#a78bfa;font-size:.8rem;font-weight:700;">${p.s.bonus>0?'+'+p.s.bonus:'—'}</td>
       <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;color:var(--green);font-size:.75rem;">${p.s.exatos}<br><span style="color:var(--grey);font-size:.6rem">${p.s.pctExatos}%</span></td>
       <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;color:var(--cyan);font-size:.75rem;">${p.s.p40}<br><span style="color:var(--grey);font-size:.6rem">${p.s.pctP40}%</span></td>
       <td style="padding:.7rem 1rem;border-bottom:1px solid rgba(255,255,255,.04);text-align:center;color:var(--gold);font-size:.75rem;">${p.s.p30}<br><span style="color:var(--grey);font-size:.6rem">${p.s.pctP30}%</span></td>
@@ -516,6 +658,7 @@ function openFaseModal(faseId){
         <th style="padding:.8rem 1rem;text-align:left;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">#</th>
         <th style="padding:.8rem 1rem;text-align:left;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">PALPITEIRO</th>
         <th style="padding:.8rem 1rem;text-align:right;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">PTS</th>
+        <th style="padding:.8rem 1rem;text-align:center;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">BÔNUS</th>
         <th style="padding:.8rem 1rem;text-align:center;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">50pts</th>
         <th style="padding:.8rem 1rem;text-align:center;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">40pts</th>
         <th style="padding:.8rem 1rem;text-align:center;font-family:'Orbitron',monospace;font-size:.6rem;letter-spacing:.15em;color:var(--grey);">30pts</th>
@@ -526,7 +669,33 @@ function openFaseModal(faseId){
     </table>`;
   document.getElementById('modal-overlay').classList.add('open');
 }
-function openModal(idx){const p=participants[idx];if(!p)return;document.getElementById('modal-title').textContent=`PALPITES — ${p.nome.toUpperCase()}`;const sc=calcScore(p);let html=`<div style="display:flex;gap:2rem;flex-wrap:wrap;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,184,0,0.1)"><div><span style="font-family:'Orbitron',monospace;font-size:2rem;color:var(--gold);font-weight:900">${sc.total}</span> <span style="color:var(--grey);font-size:0.8rem">pontos totais</span></div><div style="display:flex;gap:1.2rem;align-items:center;flex-wrap:wrap"><div><span style="color:var(--green);font-weight:700">${sc.exatos}</span> <span style="color:var(--grey);font-size:.65rem">(${sc.pctExatos}%)</span> <span style="font-size:0.7rem;color:var(--grey)">exatos·50pts</span></div><div><span style="color:var(--cyan);font-weight:700">${sc.p40}</span> <span style="color:var(--grey);font-size:.65rem">(${sc.pctP40}%)</span> <span style="font-size:0.7rem;color:var(--grey)">40pts</span></div><div><span style="color:var(--gold);font-weight:700">${sc.p30}</span> <span style="color:var(--grey);font-size:.65rem">(${sc.pctP30}%)</span> <span style="font-size:0.7rem;color:var(--grey)">30pts</span></div><div><span style="color:#999;font-weight:700">${sc.p10}</span> <span style="color:var(--grey);font-size:.65rem">(${sc.pctP10}%)</span> <span style="font-size:0.7rem;color:var(--grey)">10pts</span></div><div><span style="color:var(--red);font-weight:700">${sc.p0}</span> <span style="color:var(--grey);font-size:.65rem">(${sc.pctP0}%)</span> <span style="font-size:0.7rem;color:var(--grey)">0pts</span></div></div></div>`;const grupos=[...new Set(p.jogos.filter(j=>j.fase==='grupos').map(j=>j.grupo))].sort();for(const grp of grupos){const js=p.jogos.filter(j=>j.grupo===grp);html+=`<div class="modal-phase">GRUPO ${grp}</div>`;for(const j of js){const key=`g${j.idx}`;const r=results[key];const pts=getPts(j,key);const pc=pts===null?'':pts===50?'var(--green)':pts===40?'var(--cyan)':pts===30?'var(--gold)':pts===10?'var(--grey)':'var(--red)';const pb=pts!==null?`<span style="font-family:'Orbitron',monospace;font-size:0.7rem;color:${pc};font-weight:700;min-width:28px;text-align:right">${pts}pts</span>`:'';const rs=r&&r.golsM!==null&&r.golsV!==null?`<span style="font-size:0.65rem;color:var(--grey)">(${r.golsM}×${r.golsV})</span>`:'';html+=`<div class="modal-match"><div class="mteam home">${j.mandante}</div><div style="display:flex;align-items:center;gap:0.4rem"><div class="mscore">${j.golsM??'?'} × ${j.golsV??'?'}</div>${rs}${pb}</div><div class="mteam away">${j.visitante}</div></div>`;}}const fases=['dezesseis','oitavasReal','quartasReal','semisReal','terceiro','final'];const fL={dezesseis:'⚔️ 16 AVOS DE FINAL',oitavasReal:'⚡ OITAVAS DE FINAL',quartasReal:'🔥 QUARTAS DE FINAL',semisReal:'🌟 SEMIFINAIS',terceiro:'🥉 3º LUGAR',final:'🏆 FINAL'};for(const fase of fases){const js=p.jogos.filter(j=>j.fase===fase).sort((a,b)=>a.jogo-b.jogo);if(!js.length)continue;html+=`<div class="modal-phase">${fL[fase]}</div>`;for(const j of js){const key=`mm${j.jogo}`;const r=results[key];const pts=getPts(j,key);const pc=pts===null?'':pts===50?'var(--green)':pts===40?'var(--cyan)':pts===30?'var(--gold)':pts===10?'var(--grey)':'var(--red)';const pb=pts!==null?`<span style="font-family:'Orbitron',monospace;font-size:0.7rem;color:${pc};font-weight:700;min-width:28px;text-align:right">${pts}pts</span>`:'';const rs=r&&r.golsM!==null&&r.golsV!==null?`<span style="font-size:0.65rem;color:var(--grey)">(${r.golsM}×${r.golsV})</span>`:'';let ppInfo='';if(r&&(r.mandante||r.visitante)&&j.fase!=='grupos'){const ppm=r.mandante&&j.mandante===r.mandante?'+20PP':'';const ppv=r.visitante&&j.visitante===r.visitante?'+20PP':'';if(ppm||ppv)ppInfo=`<span style="font-size:0.65rem;color:var(--green)">${[ppm,ppv].filter(Boolean).join(' ')}</span>`;}html+=`<div class="modal-match"><div class="mteam home">${j.mandante}</div><div style="display:flex;align-items:center;gap:0.4rem;flex-direction:column"><div style="display:flex;align-items:center;gap:0.4rem"><div class="mscore">${j.golsM??'?'} × ${j.golsV??'?'}</div>${rs}${pb}</div>${ppInfo}</div><div class="mteam away">${j.visitante}</div></div>`;}}document.getElementById('modal-body').innerHTML=html;document.getElementById('modal-overlay').classList.add('open');}
+function openModal(idx){const p=participants[idx];if(!p)return;document.getElementById('modal-title').textContent=`PALPITES — ${p.nome.toUpperCase()}`;const sc=calcScore(p);let html=`<div style="display:flex;gap:2rem;flex-wrap:wrap;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,184,0,0.1)"><div><span style="font-family:'Orbitron',monospace;font-size:2rem;color:var(--gold);font-weight:900">${sc.total}</span> <span style="color:var(--grey);font-size:0.8rem">pontos totais</span></div><div style="display:flex;gap:1.2rem;align-items:center;flex-wrap:wrap"><div><span style="color:var(--green);font-weight:700">${sc.exatos}</span> <span style="color:var(--grey);font-size:.65rem">(${sc.pctExatos}%)</span> <span style="font-size:0.7rem;color:var(--grey)">exatos·50pts</span></div><div><span style="color:var(--cyan);font-weight:700">${sc.p40}</span> <span style="color:var(--grey);font-size:.65rem">(${sc.pctP40}%)</span> <span style="font-size:0.7rem;color:var(--grey)">40pts</span></div><div><span style="color:var(--gold);font-weight:700">${sc.p30}</span> <span style="color:var(--grey);font-size:.65rem">(${sc.pctP30}%)</span> <span style="font-size:0.7rem;color:var(--grey)">30pts</span></div><div><span style="color:#999;font-weight:700">${sc.p10}</span> <span style="color:var(--grey);font-size:.65rem">(${sc.pctP10}%)</span> <span style="font-size:0.7rem;color:var(--grey)">10pts</span></div><div><span style="color:var(--red);font-weight:700">${sc.p0}</span> <span style="color:var(--grey);font-size:.65rem">(${sc.pctP0}%)</span> <span style="font-size:0.7rem;color:var(--grey)">0pts</span></div></div></div>`;const grupos=[...new Set(p.jogos.filter(j=>j.fase==='grupos').map(j=>j.grupo))].sort();
+// Bloco de classificação palpitada x oficial (bônus PP 6.1)
+const oficial = results.classificacaoOficial || null;
+let classifHTML = '';
+for(const grp of grupos){
+  const classifPalpitada = calcClassificacaoGrupo(p, grp);
+  if(!classifPalpitada) continue;
+  const classifOficial = oficial ? oficial[grp] : null;
+  classifHTML += `<div style="margin-bottom:.6rem;">
+    <span style="font-family:'Orbitron',monospace;font-size:.65rem;color:var(--grey);letter-spacing:.1em;">GRUPO ${grp}:</span>
+    ${classifPalpitada.map((t,i)=>{
+      const acertou = classifOficial && classifOficial[i] && classifOficial[i]===t.nome;
+      const errou = classifOficial && classifOficial[i] && classifOficial[i]!==t.nome;
+      const cor = acertou?'var(--green)':errou?'var(--red)':'var(--white)';
+      const icone = acertou?'✓':errou?'✕':'';
+      return `<span style="font-size:.72rem;color:${cor};margin-left:.4rem;">${i+1}º ${t.nome}${icone?' '+icone:''}</span>`;
+    }).join('')}
+  </div>`;
+}
+if(classifHTML){
+  html += `<div style="margin-bottom:1.5rem;padding:1rem 1.2rem;background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.15);">
+    <div style="font-family:'Orbitron',monospace;font-size:.7rem;color:#a78bfa;letter-spacing:.1em;margin-bottom:.6rem;">🏅 CLASSIFICAÇÃO PALPITADA ${sc.bonus>0?`<span style="color:var(--green);">· +${sc.bonus}pts de bônus</span>`:''}</div>
+    ${classifHTML}
+    ${!oficial?'<div style="font-size:.68rem;color:var(--grey);margin-top:.4rem;font-style:italic;">Classificação oficial ainda não divulgada — pontos serão aplicados após o fim da fase de grupos.</div>':''}
+  </div>`;
+}
+for(const grp of grupos){const js=p.jogos.filter(j=>j.grupo===grp);html+=`<div class="modal-phase">GRUPO ${grp}</div>`;for(const j of js){const key=`g${j.idx}`;const r=results[key];const pts=getPts(j,key);const pc=pts===null?'':pts===50?'var(--green)':pts===40?'var(--cyan)':pts===30?'var(--gold)':pts===10?'var(--grey)':'var(--red)';const pb=pts!==null?`<span style="font-family:'Orbitron',monospace;font-size:0.7rem;color:${pc};font-weight:700;min-width:28px;text-align:right">${pts}pts</span>`:'';const rs=r&&r.golsM!==null&&r.golsV!==null?`<span style="font-size:0.65rem;color:var(--grey)">(${r.golsM}×${r.golsV})</span>`:'';html+=`<div class="modal-match"><div class="mteam home">${j.mandante}</div><div style="display:flex;align-items:center;gap:0.4rem"><div class="mscore">${j.golsM??'?'} × ${j.golsV??'?'}</div>${rs}${pb}</div><div class="mteam away">${j.visitante}</div></div>`;}}const fases=['dezesseis','oitavasReal','quartasReal','semisReal','terceiro','final'];const fL={dezesseis:'⚔️ 16 AVOS DE FINAL',oitavasReal:'⚡ OITAVAS DE FINAL',quartasReal:'🔥 QUARTAS DE FINAL',semisReal:'🌟 SEMIFINAIS',terceiro:'🥉 3º LUGAR',final:'🏆 FINAL'};for(const fase of fases){const js=p.jogos.filter(j=>j.fase===fase).sort((a,b)=>a.jogo-b.jogo);if(!js.length)continue;html+=`<div class="modal-phase">${fL[fase]}</div>`;for(const j of js){const key=`mm${j.jogo}`;const r=results[key];const pts=getPts(j,key);const pc=pts===null?'':pts===50?'var(--green)':pts===40?'var(--cyan)':pts===30?'var(--gold)':pts===10?'var(--grey)':'var(--red)';const pb=pts!==null?`<span style="font-family:'Orbitron',monospace;font-size:0.7rem;color:${pc};font-weight:700;min-width:28px;text-align:right">${pts}pts</span>`:'';const rs=r&&r.golsM!==null&&r.golsV!==null?`<span style="font-size:0.65rem;color:var(--grey)">(${r.golsM}×${r.golsV})</span>`:'';let ppInfo='';if(r&&(r.mandante||r.visitante)&&j.fase!=='grupos'){const ppm=r.mandante&&j.mandante===r.mandante?'+20PP':'';const ppv=r.visitante&&j.visitante===r.visitante?'+20PP':'';if(ppm||ppv)ppInfo=`<span style="font-size:0.65rem;color:var(--green)">${[ppm,ppv].filter(Boolean).join(' ')}</span>`;}html+=`<div class="modal-match"><div class="mteam home">${j.mandante}</div><div style="display:flex;align-items:center;gap:0.4rem;flex-direction:column"><div style="display:flex;align-items:center;gap:0.4rem"><div class="mscore">${j.golsM??'?'} × ${j.golsV??'?'}</div>${rs}${pb}</div>${ppInfo}</div><div class="mteam away">${j.visitante}</div></div>`;}}document.getElementById('modal-body').innerHTML=html;document.getElementById('modal-overlay').classList.add('open');}
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
 
 // ── DASHBOARD DE DESTAQUES ──

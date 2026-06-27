@@ -125,6 +125,7 @@
   <div class="admin-tabs">
     <div class="admin-tabs-inner">
       <button class="tab-btn active" onclick="switchTab('grupos',this)">⚽ FASE DE GRUPOS</button>
+      <button class="tab-btn" onclick="switchTab('classificacao',this)">🏅 CLASSIFICAÇÃO GRUPOS</button>
       <button class="tab-btn" onclick="switchTab('oitavas',this)">⚔️ OITAVAS</button>
       <button class="tab-btn" onclick="switchTab('quartas',this)">⚡ QUARTAS</button>
       <button class="tab-btn" onclick="switchTab('semis',this)">🔥 SEMIFINAIS</button>
@@ -137,6 +138,10 @@
     <div id="tab-grupos" class="tab-panel active">
       <p class="info-note">Insira o placar real após cada jogo. Horários em <span>horário de Brasília</span>. Pênaltis não contam.</p>
       <div id="grupos-content"></div>
+    </div>
+    <div id="tab-classificacao" class="tab-panel">
+      <p class="info-note">Defina o <span>1º, 2º, 3º e 4º colocado oficial</span> de cada grupo (conforme tabela real da FIFA, já com critérios de desempate aplicados). Isso gera <span>20 pontos de bônus PP</span> para cada palpiteiro que acertar a posição de cada seleção.</p>
+      <div id="classificacao-content"></div>
     </div>
     <div id="tab-oitavas" class="tab-panel">
       <p class="info-note">Selecione os times de cada confronto e informe o placar. A seleção correta dos times gera <span>pontuação PP (20 pts)</span> para quem acertou o posicionamento.</p>
@@ -312,6 +317,7 @@ async function saveResults(){
 async function initAdmin(){
   await loadResults();
   buildGrupos();
+  buildClassificacao();
   buildMM('oitavas');
   buildMM('quartas');
   buildMM('semis');
@@ -353,6 +359,50 @@ function buildGrupos(){
 function teamSelectOpts(sel){
   return TEAMS_EXACT.map(t=>`<option value="${t}"${t===sel?' selected':''}>${t}</option>`).join('');
 }
+
+// ── CLASSIFICAÇÃO OFICIAL DOS GRUPOS (1º-4º) ──
+function getTimesPorGrupo(){
+  const byGrp = {};
+  for(const j of GRUPOS_JOGOS){
+    if(!byGrp[j.grp]) byGrp[j.grp]=new Set();
+    byGrp[j.grp].add(j.mand);
+    byGrp[j.grp].add(j.visit);
+  }
+  const out = {};
+  Object.keys(byGrp).sort().forEach(g=>{ out[g]=[...byGrp[g]]; });
+  return out;
+}
+
+function buildClassificacao(){
+  const timesPorGrupo = getTimesPorGrupo();
+  if(!results.classificacaoOficial) results.classificacaoOficial = {};
+  let html = '<div class="groups-grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));">';
+  for(const grp of Object.keys(timesPorGrupo)){
+    const times = timesPorGrupo[grp];
+    const classifAtual = results.classificacaoOficial[grp] || ['','','',''];
+    html += `<div class="match-card" style="flex-direction:column;align-items:stretch;gap:.6rem;padding:1rem 1.1rem;">
+      <div style="font-family:'Orbitron',monospace;font-size:.75rem;color:var(--gold);letter-spacing:.1em;margin-bottom:.3rem;">GRUPO ${grp}</div>
+      ${[0,1,2,3].map(pos=>`
+        <div style="display:flex;align-items:center;gap:.6rem;">
+          <span style="font-family:'Orbitron',monospace;font-size:.7rem;color:var(--grey);min-width:22px;">${pos+1}º</span>
+          <select class="team-select${classifAtual[pos]?' selected':''}" style="flex:1;"
+            onchange="setClassificacao('${grp}',${pos},this.value)">
+            <option value="">— Selecionar —</option>
+            ${times.map(t=>`<option value="${t}"${t===classifAtual[pos]?' selected':''}>${t}</option>`).join('')}
+          </select>
+        </div>`).join('')}
+    </div>`;
+  }
+  html += '</div>';
+  document.getElementById('classificacao-content').innerHTML = html;
+}
+
+function setClassificacao(grupo, pos, valor){
+  if(!results.classificacaoOficial) results.classificacaoOficial = {};
+  if(!results.classificacaoOficial[grupo]) results.classificacaoOficial[grupo] = ['','','',''];
+  results.classificacaoOficial[grupo][pos] = valor || '';
+}
+
 
 function buildMM(fase){
   const jogos=MM_JOGOS[fase];
