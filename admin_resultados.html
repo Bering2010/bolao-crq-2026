@@ -560,6 +560,18 @@ function resolveJogoVencedor(numJogo){
   return {mandante: vencedorJogo(conf.home).vencedor, visitante: vencedorJogo(conf.away).vencedor};
 }
 
+// Retorna a lista de candidatos elegíveis (3º colocados dos grupos da lista) pra um slot "terceiro",
+// independente de já estarem entre os 8 melhores ou não — usado pro dropdown manual de ajuste.
+function getCandidatosTerceiro(grupos){
+  if(!results.classificacaoOficial) return [];
+  const candidatos=[];
+  for(const g of grupos){
+    const classif = results.classificacaoOficial[g];
+    if(classif && classif[2]) candidatos.push({nome:classif[2], grupo:g});
+  }
+  return candidatos;
+}
+
 function buildMM(fase){
   const jogos=MM_JOGOS[fase];
   let html='';
@@ -570,24 +582,49 @@ function buildMM(fase){
 
     // Resolve automaticamente o mandante/visitante via chaveamento
     let resolvido;
+    let confR32 = null;
     if(fase==='dezesseis'){
       resolvido = resolveJogoR32(num);
+      confR32 = CHAVE_R32[num];
     }else{
       resolvido = resolveJogoVencedor(num);
     }
-    // Salva os nomes resolvidos no results (pra ficar consistente com o que o site principal lê)
-    r.mandante = resolvido.mandante;
-    r.visitante = resolvido.visitante;
 
-    const mT = resolvido.mandante;
-    const vT = resolvido.visitante;
+    // Se houver ajuste manual salvo para esse jogo (slot 'terceiro'), ele tem prioridade sobre a sugestão automática
+    const ajuste = results.ajusteManual && results.ajusteManual[key];
+    let mT = (ajuste && ajuste.mandante) ? ajuste.mandante : resolvido.mandante;
+    let vT = (ajuste && ajuste.visitante) ? ajuste.visitante : resolvido.visitante;
+
+    // Salva os nomes efetivos no results (pra ficar consistente com o que o site principal lê)
+    r.mandante = mT;
+    r.visitante = vT;
+
     const mV=r.golsM??''; const vV=r.golsV??'';
     const pendente = !mT || !vT;
 
+    // Detecta se home/away desse jogo é um slot "terceiro" -> mostra dropdown editável
+    const homeIsTerceiro = confR32 && confR32.home.tipo==='terceiro';
+    const awayIsTerceiro = confR32 && confR32.away.tipo==='terceiro';
+
+    function campoTime(lado, nomeAtual, isTerceiro, slotConf){
+      if(!isTerceiro){
+        return `<span class="mm-team-label${lado==='away'?' away':''}" style="${!nomeAtual?'color:var(--grey);font-style:italic;':''}">${nomeAtual||'(a definir)'}</span>`;
+      }
+      const candidatos = getCandidatosTerceiro(slotConf.grupos);
+      return `<select class="team-select${nomeAtual?' selected':''}" style="min-width:140px;"
+        onchange="setAjusteManual('${key}','${lado==='home'?'mandante':'visitante'}',this.value)">
+        <option value="">— Sugestão automática —</option>
+        ${candidatos.map(c=>`<option value="${c.nome}"${c.nome===nomeAtual?' selected':''}>${c.nome} (3º Grupo ${c.grupo})</option>`).join('')}
+      </select>`;
+    }
+
+    const mTHtml = campoTime('home', mT, homeIsTerceiro, confR32?.home);
+    const vTHtml = campoTime('away', vT, awayIsTerceiro, confR32?.away);
+
     html+=`<div class="mm-card">
-      <div class="mm-jogo-num">JOGO ${num}</div>
+      <div class="mm-jogo-num">JOGO ${num}${(homeIsTerceiro||awayIsTerceiro)?' <span style="color:#a78bfa;font-size:.65rem;">· vaga de 3º ajustável</span>':''}</div>
       <div class="mm-score-row">
-        <span class="mm-team-label" style="${!mT?'color:var(--grey);font-style:italic;':''}">${mT||'(a definir)'}</span>
+        ${mTHtml}
         <div class="score-inputs">
           <input class="score-in${mV!==''?' filled':''}" type="number" min="0" max="20" value="${mV}" placeholder="—" ${pendente?'disabled':''}
             oninput="setScore('${key}','golsM',this.value,this)">
@@ -595,12 +632,19 @@ function buildMM(fase){
           <input class="score-in${vV!==''?' filled':''}" type="number" min="0" max="20" value="${vV}" placeholder="—" ${pendente?'disabled':''}
             oninput="setScore('${key}','golsV',this.value,this)">
         </div>
-        <span class="mm-team-label away" style="${!vT?'color:var(--grey);font-style:italic;':''}">${vT||'(a definir)'}</span>
+        ${vTHtml}
       </div>
       ${pendente?'<div style="font-size:.68rem;color:var(--grey);text-align:center;margin-top:.5rem;font-style:italic;">Aguardando classificação dos grupos / resultado de jogo anterior</div>':''}
     </div>`;
   }
   document.getElementById(`${fase}-content`).innerHTML=html;
+}
+
+function setAjusteManual(key, campo, valor){
+  if(!results.ajusteManual) results.ajusteManual = {};
+  if(!results.ajusteManual[key]) results.ajusteManual[key] = {};
+  results.ajusteManual[key][campo] = valor || null;
+  rebuildFasesEliminatorias();
 }
 
 function setScore(key,field,val,el){
