@@ -449,7 +449,7 @@ function calcClassificacaoGrupo(p, grupoLetra){
   if(!jogosGrupo.length) return null;
   const times = new Set();
   jogosGrupo.forEach(j=>{times.add(j.mandante); times.add(j.visitante);});
-  if(times.size<4) return null; // grupo incompleto no palpite
+  if(times.size!==4) return null; // grupo incompleto ou com nomes inconsistentes no palpite
 
   const stats = {};
   times.forEach(t=>{stats[t]={nome:t,pts:0,gp:0,gc:0,jg:0};});
@@ -540,17 +540,31 @@ function calcMelhoresTerceiros(p){
 // Calcula o bônus PP da fase de grupos (6.1 do regulamento): 20pts por seleção corretamente
 // posicionada (1º-4º) dentro do grupo, comparado com a classificação OFICIAL (em results.classificacaoOficial)
 function calcBonusGrupoPP(p){
+  // Se o bônus já foi FIXADO definitivamente pelo admin (após o fim da fase de grupos),
+  // usa esse valor congelado em vez de recalcular dinamicamente.
+  if(typeof results!=='undefined' && results.bonusGrupoFixado && results.bonusGrupoFixado[p.nome]!==undefined){
+    return results.bonusGrupoFixado[p.nome];
+  }
   const oficial = (typeof results!=='undefined' && results.classificacaoOficial) ? results.classificacaoOficial : null;
   if(!oficial) return 0;
   let bonus = 0;
-  const grupos = [...new Set(p.jogos.filter(j=>j.fase==='grupos').map(j=>j.grupo))];
+  // Lista de grupos únicos (A-L), nunca repetidos, máximo 12
+  const grupos = [...new Set(p.jogos.filter(j=>j.fase==='grupos' && j.grupo).map(j=>j.grupo))];
   for(const g of grupos){
     const classifPalpitada = calcClassificacaoGrupo(p, g);
     const classifOficial = oficial[g];
     if(!classifPalpitada || !classifOficial) continue;
-    for(let pos=0; pos<4; pos++){
+    // Garante que comparamos no máximo 4 posições, mesmo que algum array venha maior por engano
+    const limite = Math.min(4, classifPalpitada.length, classifOficial.length);
+    for(let pos=0; pos<limite; pos++){
       if(classifPalpitada[pos] && classifOficial[pos] && classifPalpitada[pos].nome===classifOficial[pos]) bonus += PTS.PP;
     }
+  }
+  // Trava de segurança absoluta: nunca pode passar de 12 grupos x 4 posições x 20pts = 960pts
+  const TETO_BONUS_GRUPO = 960;
+  if(bonus > TETO_BONUS_GRUPO){
+    console.warn('calcBonusGrupoPP: valor inflado detectado e travado', {participante:p.nome, valorCalculado:bonus, teto:TETO_BONUS_GRUPO});
+    bonus = TETO_BONUS_GRUPO;
   }
   return bonus;
 }

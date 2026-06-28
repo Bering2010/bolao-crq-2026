@@ -305,6 +305,117 @@ const MM_JOGOS = {
 let results = {};
 let participants = [];
 
+// ── CLASSIFICAÇÃO DE GRUPO (palpitada) — Regras oficiais FIFA 2026 (mesma lógica do site principal) ──
+function calcClassificacaoGrupo(p, grupoLetra){
+  const jogosGrupo = p.jogos.filter(j=>j.fase==='grupos' && j.grupo===grupoLetra && j.golsM!==null && j.golsV!==null);
+  if(!jogosGrupo.length) return null;
+  const times = new Set();
+  jogosGrupo.forEach(j=>{times.add(j.mandante); times.add(j.visitante);});
+  if(times.size!==4) return null; // grupo incompleto ou com nomes inconsistentes no palpite
+
+  const stats = {};
+  times.forEach(t=>{stats[t]={nome:t,pts:0,gp:0,gc:0,jg:0};});
+
+  jogosGrupo.forEach(j=>{
+    const gM=Number(j.golsM), gV=Number(j.golsV);
+    stats[j.mandante].jg++; stats[j.visitante].jg++;
+    stats[j.mandante].gp+=gM; stats[j.mandante].gc+=gV;
+    stats[j.visitante].gp+=gV; stats[j.visitante].gc+=gM;
+    if(gM>gV){stats[j.mandante].pts+=3;}
+    else if(gM<gV){stats[j.visitante].pts+=3;}
+    else{stats[j.mandante].pts+=1; stats[j.visitante].pts+=1;}
+  });
+
+  function statsConfrontoDireto(nomesTimes){
+    const h2h = {};
+    nomesTimes.forEach(t=>{h2h[t]={pts:0,gp:0,gc:0};});
+    jogosGrupo.forEach(j=>{
+      if(!nomesTimes.includes(j.mandante) || !nomesTimes.includes(j.visitante)) return;
+      const gM=Number(j.golsM), gV=Number(j.golsV);
+      h2h[j.mandante].gp+=gM; h2h[j.mandante].gc+=gV;
+      h2h[j.visitante].gp+=gV; h2h[j.visitante].gc+=gM;
+      if(gM>gV) h2h[j.mandante].pts+=3;
+      else if(gM<gV) h2h[j.visitante].pts+=3;
+      else{h2h[j.mandante].pts+=1; h2h[j.visitante].pts+=1;}
+    });
+    return h2h;
+  }
+
+  function ordenarEmpatados(nomesTimes){
+    if(nomesTimes.length<=1) return nomesTimes;
+    const h2h = statsConfrontoDireto(nomesTimes);
+    const comH2H = nomesTimes.map(t=>({
+      t, ptsH2H:h2h[t].pts, sgH2H:h2h[t].gp-h2h[t].gc, gpH2H:h2h[t].gp,
+      sgGeral: stats[t].gp-stats[t].gc, gpGeral: stats[t].gp
+    }));
+    comH2H.sort((a,b)=>{
+      if(b.ptsH2H!==a.ptsH2H) return b.ptsH2H-a.ptsH2H;
+      if(b.sgH2H!==a.sgH2H) return b.sgH2H-a.sgH2H;
+      if(b.gpH2H!==a.gpH2H) return b.gpH2H-a.gpH2H;
+      if(b.sgGeral!==a.sgGeral) return b.sgGeral-a.sgGeral;
+      return b.gpGeral-a.gpGeral;
+    });
+    return comH2H.map(x=>x.t);
+  }
+
+  const todosOrdenados = Object.values(stats).sort((a,b)=>b.pts-a.pts);
+  const resultado = [];
+  let i=0;
+  while(i<todosOrdenados.length){
+    let j=i;
+    while(j<todosOrdenados.length && todosOrdenados[j].pts===todosOrdenados[i].pts) j++;
+    const grupoEmpatado = todosOrdenados.slice(i,j).map(s=>s.nome);
+    const ordenado = ordenarEmpatados(grupoEmpatado);
+    ordenado.forEach(nome=>resultado.push(stats[nome]));
+    i=j;
+  }
+  return resultado;
+}
+
+// Calcula o bônus de classificação de grupo (20pts por posição certa, 1x só, máx 960pts) — SEM travar/salvar ainda
+function calcBonusGrupoUnico(p){
+  if(!results.classificacaoOficial) return {bonus:0, acertos:0, detalhes:[]};
+  let bonus = 0, acertos = 0;
+  const detalhes = [];
+  const grupos = [...new Set(p.jogos.filter(j=>j.fase==='grupos' && j.grupo).map(j=>j.grupo))];
+  for(const g of grupos){
+    const classifPalpitada = calcClassificacaoGrupo(p, g);
+    const classifOficial = results.classificacaoOficial[g];
+    if(!classifPalpitada || !classifOficial) continue;
+    const limite = Math.min(4, classifPalpitada.length, classifOficial.length);
+    for(let pos=0; pos<limite; pos++){
+      if(classifPalpitada[pos] && classifOficial[pos] && classifPalpitada[pos].nome===classifOficial[pos]){
+        bonus += 20; acertos++;
+        detalhes.push(`${g}:${pos+1}º ${classifPalpitada[pos].nome}`);
+      }
+    }
+  }
+  const TETO=960;
+  if(bonus>TETO) bonus=TETO;
+  return {bonus, acertos, detalhes};
+}
+
+// Calcula (sem salvar) o bônus de TODOS os participantes — usado pra pré-visualizar antes de fixar
+function calcularTodosBonus(){
+  return participants.map(p=>({nome:p.nome, ...calcBonusGrupoUnico(p)}));
+}
+
+// FIXA definitivamente o bônus de classificação de grupo de todos os participantes.
+// Depois de fixado, o site principal usa esse valor congelado em vez de recalcular.
+async function fixarBonusClassificacao(){
+  if(!results.classificacaoOficial || Object.keys(results.classificacaoOficial).length<12){
+    if(!confirm('A classificação de grupos ainda não está completa (menos de 12 grupos preenchidos). Deseja fixar o bônus mesmo assim com os dados atuais?')) return;
+  }
+  if(!confirm('Isso vai FIXAR o bônus de classificação de grupo de todos os '+participants.length+' participantes com os valores atuais. Essa ação não recalcula automaticamente depois. Confirma?')) return;
+
+  const calculo = calcularTodosBonus();
+  results.bonusGrupoFixado = {};
+  calculo.forEach(c=>{ results.bonusGrupoFixado[c.nome] = c.bonus; });
+  await saveResults();
+  showToast('Bônus de classificação fixado para '+calculo.length+' participantes!','ok');
+  buildClassificacao();
+}
+
 async function loadResults(){
   try{
     const snap=await db.collection('bolao').doc('results').get();
@@ -449,6 +560,37 @@ function buildClassificacao(){
         <span style="color:var(--white);">${t.nome}</span>
         <span style="color:var(--grey);font-size:.7rem;">(Grupo ${t.grupo} · ${t.pts}pts)</span>
       </div>`).join('')}
+    </div>
+  </div>`;
+
+  // Bloco de fixação do bônus de classificação de grupo
+  const jaFixado = results.bonusGrupoFixado && Object.keys(results.bonusGrupoFixado).length>0;
+  const preview = calcularTodosBonus().sort((a,b)=>b.bonus-a.bonus);
+  html += `<div style="margin-top:2rem;padding:1.2rem;background:${jaFixado?'rgba(0,255,136,.05)':'rgba(255,184,0,.05)'};border:1px solid ${jaFixado?'rgba(0,255,136,.2)':'rgba(255,184,0,.2)'};">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:.8rem;">
+      <div style="font-family:'Orbitron',monospace;font-size:.75rem;color:${jaFixado?'var(--green)':'var(--gold)'};letter-spacing:.1em;">
+        ${jaFixado?'✅ BÔNUS DE CLASSIFICAÇÃO JÁ FIXADO':'⚠️ BÔNUS AINDA NÃO FIXADO (valores abaixo são apenas prévia)'}
+      </div>
+      <button onclick="fixarBonusClassificacao()" style="background:linear-gradient(135deg,var(--gold),#FF8C00);color:#020B1E;font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;letter-spacing:.06em;padding:.6rem 1.2rem;border:none;cursor:pointer;">
+        🔒 ${jaFixado?'REFIXAR':'FIXAR'} BÔNUS DE TODOS OS PARTICIPANTES
+      </button>
+    </div>
+    <p style="font-size:.72rem;color:var(--grey);margin-bottom:.8rem;">
+      Esse bônus (20pts por seleção corretamente posicionada, 1x e 2x na classificação de grupo) deve ser calculado
+      <strong>uma única vez</strong>, no momento em que a fase de grupos terminar. Depois de fixado, o valor fica
+      congelado e não é mais recalculado automaticamente.
+    </p>
+    <div style="max-height:240px;overflow-y:auto;">
+      <table style="width:100%;font-size:.78rem;">
+        <thead><tr style="color:var(--grey);text-align:left;"><th style="padding:.3rem .5rem;">Palpiteiro</th><th style="padding:.3rem .5rem;text-align:center;">Acertos</th><th style="padding:.3rem .5rem;text-align:right;">Bônus</th></tr></thead>
+        <tbody>
+          ${preview.map(p=>`<tr style="border-top:1px solid rgba(255,255,255,.05);">
+            <td style="padding:.4rem .5rem;color:var(--white);">${p.nome}</td>
+            <td style="padding:.4rem .5rem;text-align:center;color:var(--cyan);">${p.acertos}</td>
+            <td style="padding:.4rem .5rem;text-align:right;font-family:'Orbitron',monospace;color:var(--gold);font-weight:700;">${jaFixado&&results.bonusGrupoFixado[p.nome]!==undefined?results.bonusGrupoFixado[p.nome]:p.bonus}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
     </div>
   </div>`;
 
