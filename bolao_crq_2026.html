@@ -436,10 +436,10 @@ async function loadState(){
     if(pSnap.exists) participants=JSON.parse(pSnap.data().data||'[]');
     const rSnap=await db.collection('bolao').doc('results').get();
     if(rSnap.exists) results=JSON.parse(rSnap.data().data||'{}');
-    // Limpa bonusGrupoFixado corrompido do Firebase automaticamente
     if(results.bonusGrupoFixado){
+      console.log('Limpando bonusGrupoFixado corrompido do Firebase...');
       delete results.bonusGrupoFixado;
-      await db.collection('bolao').doc('results').set({data: JSON.stringify(results)});
+      try{ await db.collection('bolao').doc('results').set({data:JSON.stringify(results)}); }catch(e){}
     }
     const lSnap=await db.collection('bolao').doc('lideres').get();
     if(lSnap.exists) lideresGravados=JSON.parse(lSnap.data().data||'{}');
@@ -545,18 +545,18 @@ function calcMelhoresTerceiros(p){
 // Calcula o bônus PP da fase de grupos (6.1 do regulamento): 20pts por seleção corretamente
 // posicionada (1º-4º) dentro do grupo, comparado com a classificação OFICIAL (em results.classificacaoOficial)
 function calcBonusGrupoPP(p){
-  // SEMPRE recalcula dinamicamente — bonusGrupoFixado do Firebase é ignorado
-  const oficial = (typeof results!=='undefined' && results.classificacaoOficial) ? results.classificacaoOficial : null;
+  // Sempre recalcula do zero. Ignora bonusGrupoFixado (campo legado corrompido).
+  const oficial = results && results.classificacaoOficial ? results.classificacaoOficial : null;
   if(!oficial) return 0;
   let bonus = 0;
-  const grupos = [...new Set(p.jogos.filter(j=>j.fase==='grupos' && j.grupo).map(j=>j.grupo))];
+  const grupos = [...new Set(p.jogos.filter(j=>j.fase==='grupos'&&j.grupo).map(j=>j.grupo))];
   for(const g of grupos){
     const cp = calcClassificacaoGrupo(p, g);
     const co = oficial[g];
-    if(!cp || !co) continue;
+    if(!cp||!co) continue;
     const lim = Math.min(4, cp.length, co.length);
     for(let i=0; i<lim; i++){
-      if(cp[i] && co[i] && cp[i].nome===co[i]) bonus += PTS.PP;
+      if(cp[i]&&co[i]&&cp[i].nome===co[i]) bonus+=20;
     }
   }
   return Math.min(bonus, 960);
