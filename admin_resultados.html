@@ -126,6 +126,7 @@
     <div class="admin-tabs-inner">
       <button class="tab-btn active" onclick="switchTab('grupos',this)">⚽ FASE DE GRUPOS</button>
       <button class="tab-btn" onclick="switchTab('classificacao',this)">🏅 CLASSIFICAÇÃO GRUPOS</button>
+      <button class="tab-btn" onclick="switchTab('dezesseis',this)">🎯 16 AVOS</button>
       <button class="tab-btn" onclick="switchTab('oitavas',this)">⚔️ OITAVAS</button>
       <button class="tab-btn" onclick="switchTab('quartas',this)">⚡ QUARTAS</button>
       <button class="tab-btn" onclick="switchTab('semis',this)">🔥 SEMIFINAIS</button>
@@ -143,16 +144,20 @@
       <p class="info-note">Defina o <span>1º, 2º, 3º e 4º colocado oficial</span> de cada grupo (conforme tabela real da FIFA, já com critérios de desempate aplicados). Isso gera <span>20 pontos de bônus PP</span> para cada palpiteiro que acertar a posição de cada seleção.</p>
       <div id="classificacao-content"></div>
     </div>
+    <div id="tab-dezesseis" class="tab-panel">
+      <p class="info-note">Resultados reais dos <span>16 avos de final</span> (jogos 73-88). Selecione as seleções e o placar de cada confronto.</p>
+      <div id="dezesseis-content"></div>
+    </div>
     <div id="tab-oitavas" class="tab-panel">
-      <p class="info-note">Selecione os times de cada confronto e informe o placar. A seleção correta dos times gera <span>pontuação PP (20 pts)</span> para quem acertou o posicionamento.</p>
+      <p class="info-note">Oitavas de final — Jogos 89 a 96. Selecione os times de cada confronto e informe o placar. A seleção correta dos times gera <span>pontuação PP (20 pts)</span> para quem acertou o posicionamento.</p>
       <div id="oitavas-content"></div>
     </div>
     <div id="tab-quartas" class="tab-panel">
-      <p class="info-note">Quartas de final — Jogos 89 a 96. Selecione os times classificados e informe o placar.</p>
+      <p class="info-note">Quartas de final — Jogos 97 a 100. Selecione os times classificados e informe o placar.</p>
       <div id="quartas-content"></div>
     </div>
     <div id="tab-semis" class="tab-panel">
-      <p class="info-note">Semifinais — Jogos 97 a 100.</p>
+      <p class="info-note">Semifinais — Jogos 101 a 102.</p>
       <div id="semis-content"></div>
     </div>
     <div id="tab-terceiro" class="tab-panel">
@@ -289,9 +294,10 @@ const GRUPOS_JOGOS = [
 ];
 
 const MM_JOGOS = {
-  oitavas:[73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88],
-  quartas:[89,90,91,92,93,94,95,96],
-  semis:[97,98,99,100],
+  dezesseis:[73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88],
+  oitavas:[89,90,91,92,93,94,95,96],
+  quartas:[97,98,99,100],
+  semis:[101,102],
   terceiro:[103],
   final:[104]
 };
@@ -318,6 +324,7 @@ async function initAdmin(){
   await loadResults();
   buildGrupos();
   buildClassificacao();
+  buildMM('dezesseis');
   buildMM('oitavas');
   buildMM('quartas');
   buildMM('semis');
