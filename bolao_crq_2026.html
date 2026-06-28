@@ -540,12 +540,10 @@ function calcMelhoresTerceiros(p){
 // Calcula o bônus PP da fase de grupos (6.1 do regulamento): 20pts por seleção corretamente
 // posicionada (1º-4º) dentro do grupo, comparado com a classificação OFICIAL (em results.classificacaoOficial)
 function calcBonusGrupoPP(p){
-  // SEMPRE recalcula do zero — ignora qualquer valor fixado no Firebase
-  // para evitar acúmulo de valores corrompidos de versões anteriores.
+  // SEMPRE recalcula do zero — nunca usa bonusGrupoFixado do Firebase (pode estar corrompido)
   const oficial = (typeof results!=='undefined' && results.classificacaoOficial) ? results.classificacaoOficial : null;
   if(!oficial) return 0;
   let bonus = 0;
-  // Grupos únicos (A-L), máximo 12
   const grupos = [...new Set(p.jogos.filter(j=>j.fase==='grupos' && j.grupo).map(j=>j.grupo))];
   for(const g of grupos){
     const classifPalpitada = calcClassificacaoGrupo(p, g);
@@ -558,7 +556,7 @@ function calcBonusGrupoPP(p){
       }
     }
   }
-  // Teto absoluto: 12 grupos × 4 posições × 20pts = 960pts
+  // Teto: 12 grupos × 4 posições × 20pts = 960pts
   return Math.min(bonus, 960);
 }
 
