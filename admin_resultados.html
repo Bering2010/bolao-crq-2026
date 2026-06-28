@@ -148,6 +148,10 @@
       <p class="info-note">Resultados reais dos <span>16 avos de final</span> (jogos 73-88). Selecione as seleções e o placar de cada confronto.</p>
       <div id="dezesseis-content"></div>
     </div>
+    <div id="tab-fase32" class="tab-panel">
+      <p class="info-note">16 Avos de Final (Fase 32) — Jogos 73 a 88. Selecione os times classificados e informe o placar. A seleção correta gera <span>pontuação PP (20 pts)</span>.</p>
+      <div id="fase32-content"></div>
+    </div>
     <div id="tab-oitavas" class="tab-panel">
       <p class="info-note">Oitavas de final — Jogos 89 a 96. Selecione os times de cada confronto e informe o placar. A seleção correta dos times gera <span>pontuação PP (20 pts)</span> para quem acertou o posicionamento.</p>
       <div id="oitavas-content"></div>
@@ -409,8 +413,8 @@ async function fixarBonusClassificacao(){
   if(!confirm('Isso vai FIXAR o bônus de classificação de grupo de todos os '+participants.length+' participantes com os valores atuais. Essa ação não recalcula automaticamente depois. Confirma?')) return;
 
   const calculo = calcularTodosBonus();
-  results.bonusGrupoFixado = {};
-  calculo.forEach(c=>{ results.bonusGrupoFixado[c.nome] = c.bonus; });
+  // bonusGrupoFixado removido — o site sempre recalcula do zero
+  delete results.bonusGrupoFixado;
   await saveResults();
   showToast('Bônus de classificação fixado para '+calculo.length+' participantes!','ok');
   buildClassificacao();
@@ -564,7 +568,7 @@ function buildClassificacao(){
   </div>`;
 
   // Bloco de fixação do bônus de classificação de grupo
-  const jaFixado = results.bonusGrupoFixado && Object.keys(results.bonusGrupoFixado).length>0;
+  const jaFixado = false; // sempre recalcula dinamicamente
   const preview = calcularTodosBonus().sort((a,b)=>b.bonus-a.bonus);
   html += `<div style="margin-top:2rem;padding:1.2rem;background:${jaFixado?'rgba(0,255,136,.05)':'rgba(255,184,0,.05)'};border:1px solid ${jaFixado?'rgba(0,255,136,.2)':'rgba(255,184,0,.2)'};">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:.8rem;">
@@ -587,7 +591,7 @@ function buildClassificacao(){
           ${preview.map(p=>`<tr style="border-top:1px solid rgba(255,255,255,.05);">
             <td style="padding:.4rem .5rem;color:var(--white);">${p.nome}</td>
             <td style="padding:.4rem .5rem;text-align:center;color:var(--cyan);">${p.acertos}</td>
-            <td style="padding:.4rem .5rem;text-align:right;font-family:'Orbitron',monospace;color:var(--gold);font-weight:700;">${jaFixado&&results.bonusGrupoFixado[p.nome]!==undefined?results.bonusGrupoFixado[p.nome]:p.bonus}</td>
+            <td style="padding:.4rem .5rem;text-align:right;font-family:'Orbitron',monospace;color:var(--gold);font-weight:700;">${p.bonus}</td>
           </tr>`).join('')}
         </tbody>
       </table>
@@ -809,6 +813,7 @@ function setScore(key,field,val,el){
 // Re-resolve todas as fases do mata-mata em cascata (cada fase depende da anterior)
 function rebuildFasesEliminatorias(){
   buildMM('dezesseis');
+  buildMM('fase32');
   buildMM('oitavas');
   buildMM('quartas');
   buildMM('semis');
