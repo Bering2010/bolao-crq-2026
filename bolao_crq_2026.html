@@ -343,6 +343,8 @@ const FASES_PREMIADAS = [
   {
     id:'r16', label:'16 Avos de Final',
     filter: j => j.fase==='dezesseis',
+    // Primeiro jogo: mm73, 28/06 — jogos da fase só "valem" PJ a partir daqui
+    primeiroJogoData: new Date('2026-06-28T00:00:00-03:00'),
     // Último jogo: mm88, 03/07 — jogo mais tarde ~23:30 Brasília, fecha 3h depois = 02:30 04/07
     ultimoKey: 'mm88',
     fechaApos: new Date('2026-07-04T02:30:00-03:00'),
@@ -351,6 +353,7 @@ const FASES_PREMIADAS = [
   {
     id:'r8', label:'Oitavas de Final',
     filter: j => j.fase==='oitavasReal',
+    primeiroJogoData: new Date('2026-07-04T00:00:00-03:00'),
     // Último jogo: mm96, 07/07 — ~23:00 Brasília, fecha = 02:00 08/07
     ultimoKey: 'mm96',
     fechaApos: new Date('2026-07-08T02:00:00-03:00'),
@@ -359,6 +362,7 @@ const FASES_PREMIADAS = [
   {
     id:'r4', label:'Quartas de Final',
     filter: j => j.fase==='quartasReal',
+    primeiroJogoData: new Date('2026-07-09T00:00:00-03:00'),
     // Último jogo: mm100, 11/07 — ~22:00 Brasília (21:00 ET), fecha = 01:00 12/07
     ultimoKey: 'mm100',
     fechaApos: new Date('2026-07-12T01:00:00-03:00'),
@@ -367,6 +371,7 @@ const FASES_PREMIADAS = [
   {
     id:'r2f', label:'Semifinais',
     filter: j => j.fase==='semisReal',
+    primeiroJogoData: new Date('2026-07-14T00:00:00-03:00'),
     ultimoKey: 'mm102',
     fechaApos: new Date('2026-07-16T01:00:00-03:00'),
     aposFaseId: 'r4' // só conta depois que as quartas fecharem
@@ -392,12 +397,26 @@ function faseJaAbriu(fase){
   return faseDeveFechar(anterior);
 }
 
-// Calcula a pontuação de uma fase, retornando zerado se a fase anterior ainda não fechou
+// Verifica se os JOGOS de uma fase eliminatória já começaram (data de hoje >= data do primeiro jogo da fase)
+// Usado pra zerar PJ (pontos de placar) enquanto os jogos da fase ainda não começaram de fato,
+// mesmo que o bônus PP (nome da seleção certa) já esteja disponível.
+function faseJogosComecaram(fase){
+  if(!fase.primeiroJogoData) return true; // fases de grupo não têm essa trava
+  return new Date() >= fase.primeiroJogoData;
+}
+
+// Calcula a pontuação de uma fase, retornando zerado se a fase anterior ainda não fechou.
+// Se a fase já abriu mas os jogos ainda não começaram, zera o PJ mas mantém o bônus PP.
 function calcScoreFaseGated(p, fase){
   if(!faseJaAbriu(fase)){
     return {total:0,exatos:0,p40:0,p30:0,p10:0,p0:0,avaliados:0,bonus:0,pctExatos:0,pctP40:0,pctP30:0,pctP10:0,pctP0:0};
   }
-  return calcScoreFiltered(p, fase.filter);
+  const score = calcScoreFiltered(p, fase.filter);
+  if(!faseJogosComecaram(fase)){
+    // Mantém só o bônus PP, zera tudo relacionado a placar (PJ)
+    return {total:score.bonus,exatos:0,p40:0,p30:0,p10:0,p0:0,avaliados:0,bonus:score.bonus,pctExatos:0,pctP40:0,pctP30:0,pctP10:0,pctP0:0};
+  }
+  return score;
 }
 
 // Líderes salvos por fase {faseId: {nome, pts}}
@@ -1012,13 +1031,21 @@ function renderStatsHoje(){
   // Para cada jogo de hoje, pegar info do confronto a partir dos palpites
   let html=`<div class="stats-grid">`;
   for(const key of jogosHoje){
-    // Descobrir mandante/visitante a partir do primeiro participante que tem esse jogo
+    // Descobrir mandante/visitante: prioriza o nome OFICIAL resolvido pelo admin (results[key]),
+    // já que para jogos eliminatórios cada palpiteiro pode ter escrito um nome diferente na planilha.
+    // Só usa o nome do palpite como fallback se ainda não houver resolução oficial.
     let mandante='?', visitante='?';
-    for(const p of participants){
-      const j = key.startsWith('g')
-        ? p.jogos.find(j=>j.fase==='grupos'&&`g${j.idx}`===key)
-        : p.jogos.find(j=>j.fase!=='grupos'&&`mm${j.jogo}`===key);
-      if(j){mandante=j.mandante;visitante=j.visitante;break;}
+    const resOficial = results[key];
+    if(resOficial && resOficial.mandante && resOficial.visitante){
+      mandante = resOficial.mandante;
+      visitante = resOficial.visitante;
+    } else {
+      for(const p of participants){
+        const j = key.startsWith('g')
+          ? p.jogos.find(j=>j.fase==='grupos'&&`g${j.idx}`===key)
+          : p.jogos.find(j=>j.fase!=='grupos'&&`mm${j.jogo}`===key);
+        if(j){mandante=j.mandante;visitante=j.visitante;break;}
+      }
     }
     // Agrupar palpites por placar
     const mapa = {}; // "gM x gV" → [nomes]
@@ -1032,20 +1059,23 @@ function renderStatsHoje(){
       mapa[k].push(p.nome.split(' ')[0]); // primeiro nome
     }
     const total = Object.values(mapa).reduce((s,a)=>s+a.length,0);
-    if(!total) continue;
     // Ordenar por quantidade desc
     const sorted = Object.entries(mapa).sort((a,b)=>b[1].length-a[1].length);
-    const max = sorted[0][1].length;
+    const max = sorted[0] ? sorted[0][1].length : 1;
     let rows='';
-    for(const [placar, nomes] of sorted){
-      const pct = Math.round(nomes.length/max*100);
-      const nomesStr = nomes.join(', ');
-      rows+=`<div class="stat-score-row">
-        <div class="stat-bar-bg" style="width:${pct}%"></div>
-        <span class="stat-score-label">${placar}</span>
-        <span class="stat-score-count">${nomes.length} palpite${nomes.length!==1?'s':''}</span>
-        <div class="stat-names-tip">👥 <strong>${nomes.length} palpite${nomes.length!==1?'s':''}</strong><br>${nomesStr}</div>
-      </div>`;
+    if(sorted.length){
+      for(const [placar, nomes] of sorted){
+        const pct = Math.round(nomes.length/max*100);
+        const nomesStr = nomes.join(', ');
+        rows+=`<div class="stat-score-row">
+          <div class="stat-bar-bg" style="width:${pct}%"></div>
+          <span class="stat-score-label">${placar}</span>
+          <span class="stat-score-count">${nomes.length} palpite${nomes.length!==1?'s':''}</span>
+          <div class="stat-names-tip">👥 <strong>${nomes.length} palpite${nomes.length!==1?'s':''}</strong><br>${nomesStr}</div>
+        </div>`;
+      }
+    } else {
+      rows = `<div style="font-size:.72rem;color:var(--grey);text-align:center;padding:.6rem 0;font-style:italic;">Ainda sem palpites computados para este confronto</div>`;
     }
     const resultado = results[key];
     const resStr = resultado&&resultado.golsM!==null&&resultado.golsV!==null
