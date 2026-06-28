@@ -324,12 +324,7 @@ async function initAdmin(){
   await loadResults();
   buildGrupos();
   buildClassificacao();
-  buildMM('dezesseis');
-  buildMM('oitavas');
-  buildMM('quartas');
-  buildMM('semis');
-  buildMM('terceiro');
-  buildMM('final');
+  rebuildFasesEliminatorias();
 }
 
 function buildGrupos(){
@@ -362,6 +357,47 @@ function buildGrupos(){
   }
   document.getElementById('grupos-content').innerHTML=html;
 }
+
+// ── MAPA OFICIAL DO CHAVEAMENTO — 16 avos de final (jogos 73-88) ──
+const CHAVE_R32 = {
+  73:{home:{tipo:'pos',grupo:'A',pos:2},away:{tipo:'pos',grupo:'B',pos:2}},
+  76:{home:{tipo:'pos',grupo:'C',pos:1},away:{tipo:'pos',grupo:'F',pos:2}},
+  74:{home:{tipo:'pos',grupo:'E',pos:1},away:{tipo:'terceiro',grupos:['A','B','C','D','F']}},
+  75:{home:{tipo:'pos',grupo:'F',pos:1},away:{tipo:'pos',grupo:'C',pos:2}},
+  78:{home:{tipo:'pos',grupo:'E',pos:2},away:{tipo:'pos',grupo:'I',pos:2}},
+  77:{home:{tipo:'pos',grupo:'I',pos:1},away:{tipo:'terceiro',grupos:['C','D','F','G','H']}},
+  79:{home:{tipo:'pos',grupo:'A',pos:1},away:{tipo:'terceiro',grupos:['C','E','F','H','I']}},
+  80:{home:{tipo:'pos',grupo:'L',pos:1},away:{tipo:'terceiro',grupos:['E','H','I','J','K']}},
+  82:{home:{tipo:'pos',grupo:'G',pos:1},away:{tipo:'terceiro',grupos:['A','E','H','I','J']}},
+  81:{home:{tipo:'pos',grupo:'D',pos:1},away:{tipo:'terceiro',grupos:['B','E','F','I','J']}},
+  84:{home:{tipo:'pos',grupo:'H',pos:1},away:{tipo:'pos',grupo:'J',pos:2}},
+  83:{home:{tipo:'pos',grupo:'K',pos:2},away:{tipo:'pos',grupo:'L',pos:2}},
+  85:{home:{tipo:'pos',grupo:'B',pos:1},away:{tipo:'terceiro',grupos:['E','F','G','I','J']}},
+  88:{home:{tipo:'pos',grupo:'D',pos:2},away:{tipo:'pos',grupo:'G',pos:2}},
+  86:{home:{tipo:'pos',grupo:'J',pos:1},away:{tipo:'pos',grupo:'H',pos:2}},
+  87:{home:{tipo:'pos',grupo:'K',pos:1},away:{tipo:'terceiro',grupos:['D','E','I','J','L']}},
+};
+
+// ── CHAVEAMENTO POR VENCEDOR — Oitavas (89-96), Quartas (97-100), Semis (101-102), 3ºlugar(103), Final(104) ──
+// Cada entrada indica de quais jogos vêm o mandante/visitante (vencedor daquele confronto anterior)
+const CHAVE_VENCEDOR = {
+  89:{home:73, away:74},
+  90:{home:75, away:76},
+  91:{home:77, away:78},
+  92:{home:79, away:80},
+  93:{home:81, away:82},
+  94:{home:83, away:84},
+  95:{home:85, away:86},
+  96:{home:87, away:88},
+  97:{home:89, away:90},
+  98:{home:91, away:92},
+  99:{home:93, away:94},
+  100:{home:95, away:96},
+  101:{home:97, away:98},
+  102:{home:99, away:100},
+  103:{home:101, away:102, tipo:'perdedores'}, // 3º lugar: PERDEDORES das semis
+  104:{home:101, away:102, tipo:'vencedores'}, // final: VENCEDORES das semis
+};
 
 function teamSelectOpts(sel){
   return TEAMS_EXACT.map(t=>`<option value="${t}"${t===sel?' selected':''}>${t}</option>`).join('');
@@ -401,49 +437,167 @@ function buildClassificacao(){
     </div>`;
   }
   html += '</div>';
+
+  // 8 melhores terceiros (calculado a partir da classificação oficial já preenchida)
+  const terceiros = calcMelhoresTerceirosOficial();
+  html += `<div style="margin-top:2rem;padding:1.2rem;background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.2);">
+    <div style="font-family:'Orbitron',monospace;font-size:.75rem;color:#a78bfa;letter-spacing:.1em;margin-bottom:.8rem;">🏅 8 MELHORES TERCEIROS COLOCADOS (avançam para os 16 avos)</div>
+    ${terceiros.length<12 ? `<div style="font-size:.78rem;color:var(--grey);font-style:italic;">Preencha a classificação de todos os 12 grupos para calcular automaticamente.</div>` : ''}
+    <div style="display:flex;flex-wrap:wrap;gap:.6rem;">
+      ${terceiros.map((t,i)=>`<div style="display:flex;align-items:center;gap:.5rem;background:${i<8?'rgba(0,255,136,.08)':'rgba(255,68,68,.06)'};border:1px solid ${i<8?'rgba(0,255,136,.25)':'rgba(255,68,68,.2)'};padding:.4rem .8rem;font-size:.78rem;">
+        <span style="font-family:'Orbitron',monospace;color:${i<8?'var(--green)':'var(--red)'};font-weight:700;">${i+1}º</span>
+        <span style="color:var(--white);">${t.nome}</span>
+        <span style="color:var(--grey);font-size:.7rem;">(Grupo ${t.grupo} · ${t.pts}pts)</span>
+      </div>`).join('')}
+    </div>
+  </div>`;
+
   document.getElementById('classificacao-content').innerHTML = html;
+}
+
+// Calcula os 12 terceiros colocados (um por grupo, a partir da classificação OFICIAL já definida)
+// e ordena pelos critérios oficiais (pts -> SG -> GP), retornando todos os 12 (os 8 primeiros avançam)
+function calcMelhoresTerceirosOficial(){
+  if(!results.classificacaoOficial) return [];
+  const terceiros = [];
+  for(const grp of Object.keys(results.classificacaoOficial)){
+    const classif = results.classificacaoOficial[grp];
+    if(!classif || !classif[2]) continue; // 3º colocado (índice 2) precisa estar definido
+    const nome3 = classif[2];
+    // Calcula pts/SG/GP reais do 3º colocado a partir dos jogos da fase de grupos
+    const jogosGrupo = GRUPOS_JOGOS.filter(j=>j.grp===grp);
+    let pts=0,gp=0,gc=0;
+    for(const j of jogosGrupo){
+      const key=`g${j.idx}`;
+      const r = results[key];
+      if(!r || r.golsM===null || r.golsV===null || r.golsM===undefined || r.golsV===undefined) continue;
+      const gM=Number(r.golsM), gV=Number(r.golsV);
+      if(j.mand===nome3){
+        gp+=gM; gc+=gV;
+        if(gM>gV) pts+=3; else if(gM===gV) pts+=1;
+      } else if(j.visit===nome3){
+        gp+=gV; gc+=gM;
+        if(gV>gM) pts+=3; else if(gM===gV) pts+=1;
+      }
+    }
+    terceiros.push({nome:nome3, grupo:grp, pts, gp, gc});
+  }
+  terceiros.sort((a,b)=>{
+    if(b.pts!==a.pts) return b.pts-a.pts;
+    const sgA=a.gp-a.gc, sgB=b.gp-b.gc;
+    if(sgB!==sgA) return sgB-sgA;
+    return b.gp-a.gp;
+  });
+  return terceiros;
 }
 
 function setClassificacao(grupo, pos, valor){
   if(!results.classificacaoOficial) results.classificacaoOficial = {};
   if(!results.classificacaoOficial[grupo]) results.classificacaoOficial[grupo] = ['','','',''];
   results.classificacaoOficial[grupo][pos] = valor || '';
+  buildClassificacao(); // re-renderiza pra atualizar lista de melhores terceiros
+  rebuildFasesEliminatorias(); // re-resolve todo o chaveamento automaticamente
 }
 
+
+// ── RESOLUÇÃO AUTOMÁTICA DO CHAVEAMENTO ──
+// Resolve um "slot" do CHAVE_R32 (pos de grupo ou vaga de 3º) para o nome real da seleção
+function resolveSlotR32(slot){
+  if(slot.tipo==='pos'){
+    const classif = results.classificacaoOficial && results.classificacaoOficial[slot.grupo];
+    if(!classif || !classif[slot.pos-1]) return null;
+    return classif[slot.pos-1] || null;
+  }
+  if(slot.tipo==='terceiro'){
+    const terceiros = calcMelhoresTerceirosOficial();
+    if(terceiros.length<8) return null; // ainda não temos os 8 melhores definidos
+    const melhores8 = terceiros.slice(0,8).map(t=>t.nome);
+    const candidato = terceiros.find(t=>slot.grupos.includes(t.grupo) && melhores8.includes(t.nome));
+    return candidato ? candidato.nome : null;
+  }
+  return null;
+}
+
+// Resolve quem é mandante/visitante de um jogo dos 16 avos (73-88)
+function resolveJogoR32(numJogo){
+  const conf = CHAVE_R32[numJogo];
+  if(!conf) return {mandante:null, visitante:null};
+  return {
+    mandante: resolveSlotR32(conf.home),
+    visitante: resolveSlotR32(conf.away)
+  };
+}
+
+// Determina vencedor/perdedor de um jogo eliminatório já com placar lançado
+// (golsM/golsV + pens em caso de empate, se existir)
+function vencedorJogo(numJogo){
+  const key = `mm${numJogo}`;
+  const r = results[key];
+  if(!r || !r.mandante || !r.visitante) return {vencedor:null, perdedor:null};
+  if(r.golsM===null || r.golsV===null || r.golsM===undefined || r.golsV===undefined) return {vencedor:null, perdedor:null};
+  const gM=Number(r.golsM), gV=Number(r.golsV);
+  if(gM>gV) return {vencedor:r.mandante, perdedor:r.visitante};
+  if(gV>gM) return {vencedor:r.visitante, perdedor:r.mandante};
+  // Empate -> checa pênaltis (campos opcionais pensM/pensV)
+  if(r.pensM!==undefined && r.pensV!==undefined && r.pensM!==null && r.pensV!==null){
+    const pM=Number(r.pensM), pV=Number(r.pensV);
+    if(pM>pV) return {vencedor:r.mandante, perdedor:r.visitante};
+    if(pV>pM) return {vencedor:r.visitante, perdedor:r.mandante};
+  }
+  return {vencedor:null, perdedor:null}; // empate sem pênaltis definidos ainda
+}
+
+// Resolve mandante/visitante de jogos 89-104 com base nos vencedores dos jogos anteriores
+function resolveJogoVencedor(numJogo){
+  const conf = CHAVE_VENCEDOR[numJogo];
+  if(!conf) return {mandante:null, visitante:null};
+  if(conf.tipo==='perdedores'){
+    return {mandante: vencedorJogo(conf.home).perdedor, visitante: vencedorJogo(conf.away).perdedor};
+  }
+  if(conf.tipo==='vencedores'){
+    return {mandante: vencedorJogo(conf.home).vencedor, visitante: vencedorJogo(conf.away).vencedor};
+  }
+  return {mandante: vencedorJogo(conf.home).vencedor, visitante: vencedorJogo(conf.away).vencedor};
+}
 
 function buildMM(fase){
   const jogos=MM_JOGOS[fase];
   let html='';
   for(const num of jogos){
-    const key=`mm${num}`; const r=results[key]||{};
-    const mT=r.mandante||''; const vT=r.visitante||'';
+    const key=`mm${num}`;
+    if(!results[key]) results[key]={};
+    const r=results[key];
+
+    // Resolve automaticamente o mandante/visitante via chaveamento
+    let resolvido;
+    if(fase==='dezesseis'){
+      resolvido = resolveJogoR32(num);
+    }else{
+      resolvido = resolveJogoVencedor(num);
+    }
+    // Salva os nomes resolvidos no results (pra ficar consistente com o que o site principal lê)
+    r.mandante = resolvido.mandante;
+    r.visitante = resolvido.visitante;
+
+    const mT = resolvido.mandante;
+    const vT = resolvido.visitante;
     const mV=r.golsM??''; const vV=r.golsV??'';
+    const pendente = !mT || !vT;
+
     html+=`<div class="mm-card">
       <div class="mm-jogo-num">JOGO ${num}</div>
-      <div class="mm-selects-row">
-        <select class="team-select${mT?' selected':''}" id="sel_${key}_m"
-          onchange="setScore('${key}','mandante',this.value,this);document.getElementById('lbl_${key}_m').textContent=this.value||'(Mandante)'">
-          <option value="">— Selecionar Mandante —</option>
-          ${teamSelectOpts(mT)}
-        </select>
-        <span class="vs-badge">VS</span>
-        <select class="team-select${vT?' selected':''}" id="sel_${key}_v"
-          onchange="setScore('${key}','visitante',this.value,this);document.getElementById('lbl_${key}_v').textContent=this.value||'(Visitante)'">
-          <option value="">— Selecionar Visitante —</option>
-          ${teamSelectOpts(vT)}
-        </select>
-      </div>
       <div class="mm-score-row">
-        <span class="mm-team-label" id="lbl_${key}_m">${mT||'(Mandante)'}</span>
+        <span class="mm-team-label" style="${!mT?'color:var(--grey);font-style:italic;':''}">${mT||'(a definir)'}</span>
         <div class="score-inputs">
-          <input class="score-in${mV!==''?' filled':''}" type="number" min="0" max="20" value="${mV}" placeholder="—"
+          <input class="score-in${mV!==''?' filled':''}" type="number" min="0" max="20" value="${mV}" placeholder="—" ${pendente?'disabled':''}
             oninput="setScore('${key}','golsM',this.value,this)">
           <span class="score-sep">×</span>
-          <input class="score-in${vV!==''?' filled':''}" type="number" min="0" max="20" value="${vV}" placeholder="—"
+          <input class="score-in${vV!==''?' filled':''}" type="number" min="0" max="20" value="${vV}" placeholder="—" ${pendente?'disabled':''}
             oninput="setScore('${key}','golsV',this.value,this)">
         </div>
-        <span class="mm-team-label away" id="lbl_${key}_v">${vT||'(Visitante)'}</span>
+        <span class="mm-team-label away" style="${!vT?'color:var(--grey);font-style:italic;':''}">${vT||'(a definir)'}</span>
       </div>
+      ${pendente?'<div style="font-size:.68rem;color:var(--grey);text-align:center;margin-top:.5rem;font-style:italic;">Aguardando classificação dos grupos / resultado de jogo anterior</div>':''}
     </div>`;
   }
   document.getElementById(`${fase}-content`).innerHTML=html;
@@ -458,6 +612,22 @@ function setScore(key,field,val,el){
     results[key][field]=val||null;
     if(el) el.classList.toggle('selected',!!val);
   }
+  // Se foi um placar de jogo de grupo (gN), os melhores terceiros podem ter mudado
+  if(key.startsWith('g') && !key.startsWith('mm')){
+    buildClassificacao();
+  }
+  // Resultado mudou -> próximas fases dependem disso, re-resolve todas as fases eliminatórias seguintes
+  rebuildFasesEliminatorias();
+}
+
+// Re-resolve todas as fases do mata-mata em cascata (cada fase depende da anterior)
+function rebuildFasesEliminatorias(){
+  buildMM('dezesseis');
+  buildMM('oitavas');
+  buildMM('quartas');
+  buildMM('semis');
+  buildMM('terceiro');
+  buildMM('final');
 }
 
 async function saveAll(){
