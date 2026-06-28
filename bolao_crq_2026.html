@@ -345,27 +345,31 @@ const FASES_PREMIADAS = [
     filter: j => j.fase==='dezesseis',
     // Último jogo: mm88, 03/07 — jogo mais tarde ~23:30 Brasília, fecha 3h depois = 02:30 04/07
     ultimoKey: 'mm88',
-    fechaApos: new Date('2026-07-04T02:30:00-03:00')
+    fechaApos: new Date('2026-07-04T02:30:00-03:00'),
+    aposFaseId: 'r3' // só conta pontos/bônus depois que a 3ª Rodada (fase de grupos) fechar
   },
   {
     id:'r8', label:'Oitavas de Final',
     filter: j => j.fase==='oitavasReal',
     // Último jogo: mm96, 07/07 — ~23:00 Brasília, fecha = 02:00 08/07
     ultimoKey: 'mm96',
-    fechaApos: new Date('2026-07-08T02:00:00-03:00')
+    fechaApos: new Date('2026-07-08T02:00:00-03:00'),
+    aposFaseId: 'r16' // só conta depois que os 16 avos fecharem
   },
   {
     id:'r4', label:'Quartas de Final',
     filter: j => j.fase==='quartasReal',
     // Último jogo: mm100, 11/07 — ~22:00 Brasília (21:00 ET), fecha = 01:00 12/07
     ultimoKey: 'mm100',
-    fechaApos: new Date('2026-07-12T01:00:00-03:00')
+    fechaApos: new Date('2026-07-12T01:00:00-03:00'),
+    aposFaseId: 'r8' // só conta depois que as oitavas fecharem
   },
   {
     id:'r2f', label:'Semifinais',
     filter: j => j.fase==='semisReal',
     ultimoKey: 'mm102',
-    fechaApos: new Date('2026-07-16T01:00:00-03:00')
+    fechaApos: new Date('2026-07-16T01:00:00-03:00'),
+    aposFaseId: 'r4' // só conta depois que as quartas fecharem
   },
 ];
 
@@ -378,6 +382,22 @@ function faseDeveFechar(fase){
   const r = results[fase.ultimoKey];
   if(!r || r.golsM === null || r.golsM === undefined || r.golsV === null || r.golsV === undefined) return false;
   return true;
+}
+
+// Verifica se uma fase já pode contar pontos (sua predecessora, se houver, já fechou)
+function faseJaAbriu(fase){
+  if(!fase.aposFaseId) return true; // sem dependência (1ª, 2ª, 3ª rodadas sempre contam)
+  const anterior = FASES_PREMIADAS.find(f=>f.id===fase.aposFaseId);
+  if(!anterior) return true;
+  return faseDeveFechar(anterior);
+}
+
+// Calcula a pontuação de uma fase, retornando zerado se a fase anterior ainda não fechou
+function calcScoreFaseGated(p, fase){
+  if(!faseJaAbriu(fase)){
+    return {total:0,exatos:0,p40:0,p30:0,p10:0,p0:0,avaliados:0,bonus:0,pctExatos:0,pctP40:0,pctP30:0,pctP10:0,pctP0:0};
+  }
+  return calcScoreFiltered(p, fase.filter);
 }
 
 // Líderes salvos por fase {faseId: {nome, pts}}
@@ -554,7 +574,7 @@ function renderLideres(){
   for(const fase of FASES_PREMIADAS){
     if(!participants.length){ html+=`<div style="background:rgba(13,31,60,.5);border:1px solid rgba(255,184,0,.08);padding:1.5rem;text-align:center;"><div style="font-family:'Orbitron',monospace;font-size:.7rem;color:var(--cyan);letter-spacing:.15em;margin-bottom:.8rem;">${fase.label}</div><div style="color:var(--grey);font-size:.8rem;">Aguardando dados</div></div>`; continue; }
     
-    const scored = participants.map(p=>{const s=calcScorePhase(p,fase.filter);return{nome:p.nome,pts:s.total,exatos:s.exatos,p40:s.p40,p30:s.p30};})
+    const scored = participants.map(p=>{const s=calcScoreFaseGated(p,fase);return{nome:p.nome,pts:s.total,exatos:s.exatos,p40:s.p40,p30:s.p30};})
       .sort((a,b)=>{
         if(b.pts!==a.pts) return b.pts-a.pts;
         if(b.exatos!==a.exatos) return b.exatos-a.exatos;
@@ -604,7 +624,7 @@ function recalcularLider(faseId){
   checkAdmin(()=>{
     const fase = FASES_PREMIADAS.find(f=>f.id===faseId);
     if(!fase||!participants.length) return;
-    const scored = participants.map(p=>{const s=calcScorePhase(p,fase.filter);return{nome:p.nome,pts:s.total,exatos:s.exatos,p40:s.p40,p30:s.p30};})
+    const scored = participants.map(p=>{const s=calcScoreFaseGated(p,fase);return{nome:p.nome,pts:s.total,exatos:s.exatos,p40:s.p40,p30:s.p30};})
       .sort((a,b)=>{
         if(b.pts!==a.pts) return b.pts-a.pts;
         if(b.exatos!==a.exatos) return b.exatos-a.exatos;
@@ -622,7 +642,7 @@ function recalcularLider(faseId){
 function openFaseModal(faseId){
   const fase = FASES_PREMIADAS.find(f=>f.id===faseId);
   if(!fase||!participants.length) return;
-  const scored = participants.map(p=>({nome:p.nome,s:calcScorePhase(p,fase.filter)}))
+  const scored = participants.map(p=>({nome:p.nome,s:calcScoreFaseGated(p,fase)}))
     .sort((a,b)=>{
       if(b.s.total!==a.s.total) return b.s.total-a.s.total;
       if(b.s.exatos!==a.s.exatos) return b.s.exatos-a.s.exatos;
