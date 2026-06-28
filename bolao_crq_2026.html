@@ -436,6 +436,11 @@ async function loadState(){
     if(pSnap.exists) participants=JSON.parse(pSnap.data().data||'[]');
     const rSnap=await db.collection('bolao').doc('results').get();
     if(rSnap.exists) results=JSON.parse(rSnap.data().data||'{}');
+    // Limpa bonusGrupoFixado corrompido do Firebase automaticamente
+    if(results.bonusGrupoFixado){
+      delete results.bonusGrupoFixado;
+      await db.collection('bolao').doc('results').set({data: JSON.stringify(results)});
+    }
     const lSnap=await db.collection('bolao').doc('lideres').get();
     if(lSnap.exists) lideresGravados=JSON.parse(lSnap.data().data||'{}');
   }catch(e){console.error('Erro ao carregar:',e);}
@@ -540,23 +545,20 @@ function calcMelhoresTerceiros(p){
 // Calcula o bônus PP da fase de grupos (6.1 do regulamento): 20pts por seleção corretamente
 // posicionada (1º-4º) dentro do grupo, comparado com a classificação OFICIAL (em results.classificacaoOficial)
 function calcBonusGrupoPP(p){
-  // SEMPRE recalcula do zero — nunca usa bonusGrupoFixado do Firebase (pode estar corrompido)
+  // SEMPRE recalcula dinamicamente — bonusGrupoFixado do Firebase é ignorado
   const oficial = (typeof results!=='undefined' && results.classificacaoOficial) ? results.classificacaoOficial : null;
   if(!oficial) return 0;
   let bonus = 0;
   const grupos = [...new Set(p.jogos.filter(j=>j.fase==='grupos' && j.grupo).map(j=>j.grupo))];
   for(const g of grupos){
-    const classifPalpitada = calcClassificacaoGrupo(p, g);
-    const classifOficial = oficial[g];
-    if(!classifPalpitada || !classifOficial) continue;
-    const limite = Math.min(4, classifPalpitada.length, classifOficial.length);
-    for(let pos=0; pos<limite; pos++){
-      if(classifPalpitada[pos] && classifOficial[pos] && classifPalpitada[pos].nome===classifOficial[pos]){
-        bonus += PTS.PP;
-      }
+    const cp = calcClassificacaoGrupo(p, g);
+    const co = oficial[g];
+    if(!cp || !co) continue;
+    const lim = Math.min(4, cp.length, co.length);
+    for(let i=0; i<lim; i++){
+      if(cp[i] && co[i] && cp[i].nome===co[i]) bonus += PTS.PP;
     }
   }
-  // Teto: 12 grupos × 4 posições × 20pts = 960pts
   return Math.min(bonus, 960);
 }
 
