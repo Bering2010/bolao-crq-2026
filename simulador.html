@@ -58,6 +58,14 @@ main{max-width:1200px;margin:0 auto;padding:2.5rem 1.5rem 5rem;}
 .sim-separator{height:1px;background:linear-gradient(90deg,transparent,rgba(167,139,250,.3),transparent);margin:.6rem 0;}
 .reset-btn{display:block;margin:1.5rem auto 0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);color:var(--grey);font-family:'Orbitron',monospace;font-size:.65rem;letter-spacing:.08em;padding:.6rem 1.4rem;cursor:pointer;transition:all .2s;}
 .reset-btn:hover{color:var(--white);border-color:var(--purple);}
+.sim-section-label{font-family:'Orbitron',monospace;font-size:.62rem;letter-spacing:.14em;padding:.35rem .6rem;margin:.9rem 0 .5rem;display:flex;align-items:center;gap:.5rem;}
+.sim-section-label.rodada{color:var(--cyan);border-left:2px solid var(--cyan);}
+.sim-section-label.geral{color:var(--gold);border-left:2px solid var(--gold);}
+.sim-rank-row.geral-row{background:rgba(255,184,0,.03);}
+.sim-rank-avatar.av4{background:linear-gradient(135deg,#1a3a5c,#0d2040);color:var(--cyan);border:1px solid rgba(0,212,255,.3);}
+.sim-rank-avatar.av5{background:linear-gradient(135deg,#1a3a5c,#0d2040);color:var(--cyan);border:1px solid rgba(0,212,255,.3);}
+.sim-rank-avatar.av6{background:linear-gradient(135deg,#1a3a5c,#0d2040);color:var(--cyan);border:1px solid rgba(0,212,255,.3);}
+.sim-rank-avatar.av7{background:linear-gradient(135deg,#1a3a5c,#0d2040);color:var(--cyan);border:1px solid rgba(0,212,255,.3);}
 </style>
 </head>
 <body>
@@ -284,7 +292,7 @@ function render(){
   el.innerHTML = `<div class="sim-wrapper">
     <div class="sim-matches">${matchesHTML}</div>
     <div class="sim-podium">
-      <div class="sim-podium-title">🏆 TOP 3 PROJETADO</div>
+      <div class="sim-podium-title">🏆 PROJEÇÃO SIMULADA</div>
       <div id="sim-podium-inner">${podioHTML}</div>
       <div class="sim-hint">Preencha os placares à esquerda para atualizar a projeção</div>
     </div>
@@ -300,15 +308,16 @@ function buildSimPodium(jogosHojeSet){
   const ranked = participants.map(p=>{
     const sim = calcScoreSim(p, jogosHojeSet);
     return {nome:p.nome, total:sim.total, simExtra:sim.simExtra};
-  }).sort((a,b)=>b.total-a.total);
+  });
 
-  const top3 = ranked.slice(0,3);
-  const avatarCls = ['av1','av2','av3'];
+  // Top 3 da RODADA: quem somou mais pts nos jogos de hoje
+  const topRodada = [...ranked].sort((a,b)=>b.simExtra-a.simExtra).slice(0,3);
   const medalha = ['🥇','🥈','🥉'];
+  const avatarCls = ['av1','av2','av3'];
 
-  return top3.map((p,i)=>{
+  const rowsRodada = topRodada.map((p,i)=>{
     const delta = p.simExtra > 0
-      ? `<span class="sim-rank-delta up">+${p.simExtra} pts hoje</span>`
+      ? `<span class="sim-rank-delta up">+${p.simExtra} pts nesta rodada</span>`
       : `<span class="sim-rank-delta same">sem ganhos hoje</span>`;
     const nomeParts = p.nome.split(' ');
     const nomeShort = nomeParts.length>1 ? `${nomeParts[0]} ${nomeParts[nomeParts.length-1]}` : p.nome;
@@ -320,11 +329,39 @@ function buildSimPodium(jogosHojeSet){
         ${delta}
       </div>
       <div style="text-align:right">
-        <span class="sim-rank-total" style="color:${i===0?'#FFB800':i===1?'#aaa':'#cd7f32'}">${p.total}</span>
-        <div class="sim-rank-pts-label">pts</div>
+        <span class="sim-rank-total" style="color:${i===0?'#FFB800':i===1?'#aaa':'#cd7f32'}">${p.simExtra}</span>
+        <div class="sim-rank-pts-label">pts rodada</div>
       </div>
     </div>`;
   }).join('<div class="sim-separator"></div>');
+
+  // Top 4 do RANKING GERAL: maior pontuação acumulada
+  const topGeral = [...ranked].sort((a,b)=>b.total-a.total).slice(0,4);
+
+  const rowsGeral = topGeral.map((p,i)=>{
+    const nomeParts = p.nome.split(' ');
+    const nomeShort = nomeParts.length>1 ? `${nomeParts[0]} ${nomeParts[nomeParts.length-1]}` : p.nome;
+    const posLabel = `${i+1}º`;
+    return `<div class="sim-rank-row geral-row">
+      <span class="sim-rank-pos" style="font-family:'Orbitron',monospace;font-size:.75rem;color:var(--gold)">${posLabel}</span>
+      <div class="sim-rank-avatar av${i+4}">${initials(p.nome)}</div>
+      <div class="sim-rank-info">
+        <div class="sim-rank-name">${nomeShort}</div>
+        <span class="sim-rank-delta up">+${p.simExtra} hoje</span>
+      </div>
+      <div style="text-align:right">
+        <span class="sim-rank-total" style="color:var(--gold)">${p.total}</span>
+        <div class="sim-rank-pts-label">pts total</div>
+      </div>
+    </div>`;
+  }).join('<div class="sim-separator"></div>');
+
+  return `
+    <div class="sim-section-label rodada">⚡ TOP 3 DA RODADA</div>
+    ${rowsRodada}
+    <div class="sim-section-label geral" style="margin-top:1.2rem">🏅 TOP 4 RANKING GERAL</div>
+    ${rowsGeral}
+  `;
 }
 
 function simUpdate(key, lado, val, idx){
