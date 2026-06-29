@@ -436,11 +436,6 @@ async function loadState(){
     if(pSnap.exists) participants=JSON.parse(pSnap.data().data||'[]');
     const rSnap=await db.collection('bolao').doc('results').get();
     if(rSnap.exists) results=JSON.parse(rSnap.data().data||'{}');
-    if(results.bonusGrupoFixado){
-      console.log('Limpando bonusGrupoFixado corrompido do Firebase...');
-      delete results.bonusGrupoFixado;
-      try{ await db.collection('bolao').doc('results').set({data:JSON.stringify(results)}); }catch(e){}
-    }
     const lSnap=await db.collection('bolao').doc('lideres').get();
     if(lSnap.exists) lideresGravados=JSON.parse(lSnap.data().data||'{}');
   }catch(e){console.error('Erro ao carregar:',e);}
@@ -545,35 +540,48 @@ function calcMelhoresTerceiros(p){
 // Calcula o bônus PP da fase de grupos (6.1 do regulamento): 20pts por seleção corretamente
 // posicionada (1º-4º) dentro do grupo, comparado com a classificação OFICIAL (em results.classificacaoOficial)
 function calcBonusGrupoPP(p){
-  // Sempre recalcula do zero. Ignora bonusGrupoFixado (campo legado corrompido).
-  const oficial = results && results.classificacaoOficial ? results.classificacaoOficial : null;
+  // Se o bônus já foi FIXADO definitivamente pelo admin (após o fim da fase de grupos),
+  // usa esse valor congelado em vez de recalcular dinamicamente.
+  if(typeof results!=='undefined' && results.bonusGrupoFixado && results.bonusGrupoFixado[p.nome]!==undefined){
+    return results.bonusGrupoFixado[p.nome];
+  }
+  const oficial = (typeof results!=='undefined' && results.classificacaoOficial) ? results.classificacaoOficial : null;
   if(!oficial) return 0;
   let bonus = 0;
-  const grupos = [...new Set(p.jogos.filter(j=>j.fase==='grupos'&&j.grupo).map(j=>j.grupo))];
+  // Lista de grupos únicos (A-L), nunca repetidos, máximo 12
+  const grupos = [...new Set(p.jogos.filter(j=>j.fase==='grupos' && j.grupo).map(j=>j.grupo))];
   for(const g of grupos){
-    const cp = calcClassificacaoGrupo(p, g);
-    const co = oficial[g];
-    if(!cp||!co) continue;
-    const lim = Math.min(4, cp.length, co.length);
-    for(let i=0; i<lim; i++){
-      if(cp[i]&&co[i]&&cp[i].nome===co[i]) bonus+=20;
+    const classifPalpitada = calcClassificacaoGrupo(p, g);
+    const classifOficial = oficial[g];
+    if(!classifPalpitada || !classifOficial) continue;
+    // Garante que comparamos no máximo 4 posições, mesmo que algum array venha maior por engano
+    const limite = Math.min(4, classifPalpitada.length, classifOficial.length);
+    for(let pos=0; pos<limite; pos++){
+      if(classifPalpitada[pos] && classifOficial[pos] && classifPalpitada[pos].nome===classifOficial[pos]) bonus += PTS.PP;
     }
   }
-  return Math.min(bonus, 960);
+  // Trava de segurança absoluta: nunca pode passar de 12 grupos x 4 posições x 20pts = 960pts
+  const TETO_BONUS_GRUPO = 960;
+  if(bonus > TETO_BONUS_GRUPO){
+    console.warn('calcBonusGrupoPP: valor inflado detectado e travado', {participante:p.nome, valorCalculado:bonus, teto:TETO_BONUS_GRUPO});
+    bonus = TETO_BONUS_GRUPO;
+  }
+  return bonus;
 }
 
 function calcScoreFiltered(p, filterFn){
-  let total=0,exatos=0,p40=0,p30=0,p10=0,p0=0,avaliados=0,bonus=0;
+  let total=0,exatos=0,p40=0,p30=0,p10=0,p0=0,avaliados=0,bonus=0,bonusMataMata=0;
   const jogos = filterFn ? p.jogos.filter(filterFn) : p.jogos;
-  for(const j of jogos){const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;const res=results[key];if(!res||res.golsM===null||res.golsV===null)continue;if(j.golsM===null||j.golsV===null)continue;avaliados++;const pM=j.golsM,pV=j.golsV,rM=Number(res.golsM),rV=Number(res.golsV);if(pM===rM&&pV===rV){total+=PTS.EXATO;exatos++;}else{const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E',ok=rv===pv,aM=pM===rM,aV=pV===rV;if(ok&&(aM||aV)){total+=PTS.VENC_GOL;p40++;}else if(ok){total+=PTS.RESULTADO;p30++;}else if(aM||aV){total+=PTS.GOL_UM;p10++;}else{p0++;}}if(j.fase!=='grupos'){if(res.mandante&&j.mandante===res.mandante){total+=PTS.PP;bonus+=PTS.PP;}if(res.visitante&&j.visitante===res.visitante){total+=PTS.PP;bonus+=PTS.PP;}}}
+  for(const j of jogos){const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;const res=results[key];if(!res||res.golsM===null||res.golsV===null)continue;if(j.golsM===null||j.golsV===null)continue;avaliados++;const pM=j.golsM,pV=j.golsV,rM=Number(res.golsM),rV=Number(res.golsV);if(pM===rM&&pV===rV){total+=PTS.EXATO;exatos++;}else{const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E',ok=rv===pv,aM=pM===rM,aV=pV===rV;if(ok&&(aM||aV)){total+=PTS.VENC_GOL;p40++;}else if(ok){total+=PTS.RESULTADO;p30++;}else if(aM||aV){total+=PTS.GOL_UM;p10++;}else{p0++;}}if(j.fase!=='grupos'){if(res.mandante&&j.mandante===res.mandante){total+=PTS.PP;bonus+=PTS.PP;bonusMataMata+=PTS.PP;}if(res.visitante&&j.visitante===res.visitante){total+=PTS.PP;bonus+=PTS.PP;bonusMataMata+=PTS.PP;}}}
   // Bônus PP da fase de grupos (6.1) — só no cálculo geral (sem filtro de fase), pois depende da fase de grupos completa
+  let bonusClassificacao = 0;
   if(!filterFn){
-    const bonusGrupo = calcBonusGrupoPP(p);
-    total += bonusGrupo;
-    bonus += bonusGrupo;
+    bonusClassificacao = calcBonusGrupoPP(p);
+    total += bonusClassificacao;
+    bonus += bonusClassificacao;
   }
   const pct=n=>avaliados>0?Math.round(n/avaliados*100):0;
-  return{total,exatos,p40,p30,p10,p0,avaliados,bonus,pctExatos:pct(exatos),pctP40:pct(p40),pctP30:pct(p30),pctP10:pct(p10),pctP0:pct(p0)};}
+  return{total,exatos,p40,p30,p10,p0,avaliados,bonus,bonusMataMata,bonusClassificacao,pctExatos:pct(exatos),pctP40:pct(p40),pctP30:pct(p30),pctP10:pct(p10),pctP0:pct(p0)};}
 function calcScore(p){ return calcScoreFiltered(p, null); }
 function calcScorePhase(p, filterFn){ return calcScoreFiltered(p, filterFn); }
 function getPts(j,key){const r=results[key];if(!r||r.golsM===null||r.golsV===null||j.golsM===null||j.golsV===null)return null;const pM=j.golsM,pV=j.golsV,rM=Number(r.golsM),rV=Number(r.golsV);if(pM===rM&&pV===rV)return 50;const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E';if(rv===pv&&(pM===rM||pV===rV))return 40;if(rv===pv)return 30;if(pM===rM||pV===rV)return 10;return 0;}
@@ -584,7 +592,7 @@ function renderRanking(){const el=document.getElementById('ranking-content');if(
     if(b.score.exatos!==a.score.exatos) return b.score.exatos-a.score.exatos;
     if(b.score.p40!==a.score.p40) return b.score.p40-a.score.p40;
     return b.score.p30-a.score.p30;
-  });const max=scored[0]?.score.total||1;document.getElementById('stat-l').textContent=max;const podHTML=`<div class="podium">${scored[1]?`<div class="podium-card p2 fade-in" style="animation-delay:0.15s" onclick="openModal(${scored[1].i})"><div class="podium-avatar">${initials(scored[1].nome)}<div class="podium-pos">2</div></div><div class="podium-name">${scored[1].nome}</div><span class="podium-score">${scored[1].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[1].score.exatos}×50</span><span class="badge">🎯${scored[1].score.p40}×40</span><span class="badge">✅${scored[1].score.p30}×30</span><span class="badge">🔹${scored[1].score.p10}×10</span><span class="badge">⬛${scored[1].score.p0}×0</span></div></div>`:''}${scored[0]?`<div class="podium-card p1 fade-in" style="animation-delay:0.05s" onclick="openModal(${scored[0].i})"><span class="podium-crown">👑</span><div class="podium-avatar">${initials(scored[0].nome)}<div class="podium-pos">1</div></div><div class="podium-name">${scored[0].nome}</div><span class="podium-score">${scored[0].score.total}</span><div class="podium-label">pontos · LÍDER</div><div class="podium-badges"><span class="badge">⚽${scored[0].score.exatos}×50</span><span class="badge">🎯${scored[0].score.p40}×40</span><span class="badge">✅${scored[0].score.p30}×30</span><span class="badge">🔹${scored[0].score.p10}×10</span><span class="badge">⬛${scored[0].score.p0}×0</span></div></div>`:''} ${scored[2]?`<div class="podium-card p3 fade-in" style="animation-delay:0.25s" onclick="openModal(${scored[2].i})"><div class="podium-avatar">${initials(scored[2].nome)}<div class="podium-pos">3</div></div><div class="podium-name">${scored[2].nome}</div><span class="podium-score">${scored[2].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[2].score.exatos}×50</span><span class="badge">🎯${scored[2].score.p40}×40</span><span class="badge">✅${scored[2].score.p30}×30</span><span class="badge">🔹${scored[2].score.p10}×10</span><span class="badge">⬛${scored[2].score.p0}×0</span></div></div>`:''}</div>`;const tableHTML=`<div class="rank-table-wrap fade-in" style="animation-delay:0.3s"><table class="rank-table"><thead><tr><th>#</th><th>Palpiteiro</th><th style="text-align:right">Pontos</th><th style="text-align:center">Bônus</th><th style="text-align:center">50pts</th><th style="text-align:center">40pts</th><th style="text-align:center">30pts</th><th style="text-align:center">10pts</th><th style="text-align:center">0pts</th><th>Progresso</th></tr></thead><tbody>${scored.map((p,rank)=>`<tr onclick="openModal(${p.i})" style="cursor:pointer"><td><div class="rpos ${rank===0?'t1':rank===1?'t2':rank===2?'t3':''}">${rank+1}º</div></td><td><div class="rname-col"><div class="ravatar">${initials(p.nome)}</div><div><div class="rname">${p.nome}</div><div style="font-size:0.7rem;color:var(--grey)">${p.email||'—'}</div></div></div></td><td class="rscore">${p.score.total}</td><td style="text-align:center;color:#a78bfa;font-size:0.8rem;font-weight:700">${p.score.bonus>0?'+'+p.score.bonus:'—'}</td><td style="text-align:center;color:var(--green);font-size:0.75rem">${p.score.exatos}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctExatos}%</span></td><td style="text-align:center;color:var(--cyan);font-size:0.75rem">${p.score.p40}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP40}%</span></td><td style="text-align:center;color:var(--gold);font-size:0.75rem">${p.score.p30}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP30}%</span></td><td style="text-align:center;color:#999;font-size:0.75rem">${p.score.p10}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP10}%</span></td><td style="text-align:center;color:var(--red);font-size:0.75rem">${p.score.p0}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP0}%</span></td><td><div class="rbar-wrap"><div class="rbar" style="width:${max>0?Math.round(p.score.total/max*100):0}%"></div></div></td></tr>`).join('')}</tbody></table></div>`;el.innerHTML=podHTML+tableHTML+renderLideres();}
+  });const max=scored[0]?.score.total||1;document.getElementById('stat-l').textContent=max;const podHTML=`<div class="podium">${scored[1]?`<div class="podium-card p2 fade-in" style="animation-delay:0.15s" onclick="openModal(${scored[1].i})"><div class="podium-avatar">${initials(scored[1].nome)}<div class="podium-pos">2</div></div><div class="podium-name">${scored[1].nome}</div><span class="podium-score">${scored[1].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[1].score.exatos}×50</span><span class="badge">🎯${scored[1].score.p40}×40</span><span class="badge">✅${scored[1].score.p30}×30</span><span class="badge">🔹${scored[1].score.p10}×10</span><span class="badge">⬛${scored[1].score.p0}×0</span></div></div>`:''}${scored[0]?`<div class="podium-card p1 fade-in" style="animation-delay:0.05s" onclick="openModal(${scored[0].i})"><span class="podium-crown">👑</span><div class="podium-avatar">${initials(scored[0].nome)}<div class="podium-pos">1</div></div><div class="podium-name">${scored[0].nome}</div><span class="podium-score">${scored[0].score.total}</span><div class="podium-label">pontos · LÍDER</div><div class="podium-badges"><span class="badge">⚽${scored[0].score.exatos}×50</span><span class="badge">🎯${scored[0].score.p40}×40</span><span class="badge">✅${scored[0].score.p30}×30</span><span class="badge">🔹${scored[0].score.p10}×10</span><span class="badge">⬛${scored[0].score.p0}×0</span></div></div>`:''} ${scored[2]?`<div class="podium-card p3 fade-in" style="animation-delay:0.25s" onclick="openModal(${scored[2].i})"><div class="podium-avatar">${initials(scored[2].nome)}<div class="podium-pos">3</div></div><div class="podium-name">${scored[2].nome}</div><span class="podium-score">${scored[2].score.total}</span><div class="podium-label">pontos</div><div class="podium-badges"><span class="badge">⚽${scored[2].score.exatos}×50</span><span class="badge">🎯${scored[2].score.p40}×40</span><span class="badge">✅${scored[2].score.p30}×30</span><span class="badge">🔹${scored[2].score.p10}×10</span><span class="badge">⬛${scored[2].score.p0}×0</span></div></div>`:''}</div>`;const tableHTML=`<div class="rank-table-wrap fade-in" style="animation-delay:0.3s"><table class="rank-table"><thead><tr><th>#</th><th>Palpiteiro</th><th style="text-align:right">Pontos</th><th style="text-align:center">Bônus</th><th style="text-align:center">50pts</th><th style="text-align:center">40pts</th><th style="text-align:center">30pts</th><th style="text-align:center">10pts</th><th style="text-align:center">0pts</th><th>Progresso</th></tr></thead><tbody>${scored.map((p,rank)=>`<tr onclick="openModal(${p.i})" style="cursor:pointer"><td><div class="rpos ${rank===0?'t1':rank===1?'t2':rank===2?'t3':''}">${rank+1}º</div></td><td><div class="rname-col"><div class="ravatar">${initials(p.nome)}</div><div><div class="rname">${p.nome}</div><div style="font-size:0.7rem;color:var(--grey)">${p.email||'—'}</div></div></div></td><td class="rscore">${p.score.total}</td><td style="text-align:center;color:#a78bfa;font-size:0.8rem;font-weight:700;position:relative;" class="bonus-cell" title="${p.score.bonusClassificacao>0?'Classificação de grupo: +'+p.score.bonusClassificacao+'pts':''}${p.score.bonusClassificacao>0&&p.score.bonusMataMata>0?' · ':''}${p.score.bonusMataMata>0?'Mata-mata (jogo a jogo): +'+p.score.bonusMataMata+'pts':''}">${p.score.bonus>0?'+'+p.score.bonus:'—'}${p.score.bonus>0?`<div style="font-size:0.55rem;color:var(--grey);font-weight:400;line-height:1.3;">${p.score.bonusClassificacao>0?'🏅'+p.score.bonusClassificacao:''}${p.score.bonusClassificacao>0&&p.score.bonusMataMata>0?' + ':''}${p.score.bonusMataMata>0?'⚔️'+p.score.bonusMataMata:''}</div>`:''}</td><td style="text-align:center;color:var(--green);font-size:0.75rem">${p.score.exatos}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctExatos}%</span></td><td style="text-align:center;color:var(--cyan);font-size:0.75rem">${p.score.p40}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP40}%</span></td><td style="text-align:center;color:var(--gold);font-size:0.75rem">${p.score.p30}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP30}%</span></td><td style="text-align:center;color:#999;font-size:0.75rem">${p.score.p10}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP10}%</span></td><td style="text-align:center;color:var(--red);font-size:0.75rem">${p.score.p0}<br><span style="color:var(--grey);font-size:0.65rem">${p.score.pctP0}%</span></td><td><div class="rbar-wrap"><div class="rbar" style="width:${max>0?Math.round(p.score.total/max*100):0}%"></div></div></td></tr>`).join('')}</tbody></table></div>`;el.innerHTML=podHTML+tableHTML+renderLideres();}
 
 function renderLideres(){
   if(!Object.keys(lideresGravados).length && !participants.length) return '';
@@ -736,7 +744,7 @@ for(const grp of grupos){
 }
 if(classifHTML){
   html += `<div style="margin-bottom:1.5rem;padding:1rem 1.2rem;background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.15);">
-    <div style="font-family:'Orbitron',monospace;font-size:.7rem;color:#a78bfa;letter-spacing:.1em;margin-bottom:.6rem;">🏅 CLASSIFICAÇÃO PALPITADA ${sc.bonus>0?`<span style="color:var(--green);">· +${sc.bonus}pts de bônus</span>`:''}</div>
+    <div style="font-family:'Orbitron',monospace;font-size:.7rem;color:#a78bfa;letter-spacing:.1em;margin-bottom:.6rem;">🏅 CLASSIFICAÇÃO PALPITADA ${sc.bonusClassificacao>0?`<span style="color:var(--green);">· +${sc.bonusClassificacao}pts de bônus</span>`:''}</div>
     ${classifHTML}
     ${!oficial?'<div style="font-size:.68rem;color:var(--grey);margin-top:.4rem;font-style:italic;">Classificação oficial ainda não divulgada — pontos serão aplicados após o fim da fase de grupos.</div>':''}
   </div>`;
