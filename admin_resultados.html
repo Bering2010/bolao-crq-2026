@@ -148,10 +148,6 @@
       <p class="info-note">Resultados reais dos <span>16 avos de final</span> (jogos 73-88). Selecione as seleções e o placar de cada confronto.</p>
       <div id="dezesseis-content"></div>
     </div>
-    <div id="tab-fase32" class="tab-panel">
-      <p class="info-note">16 Avos de Final (Fase 32) — Jogos 73 a 88. Selecione os times classificados e informe o placar. A seleção correta gera <span>pontuação PP (20 pts)</span>.</p>
-      <div id="fase32-content"></div>
-    </div>
     <div id="tab-oitavas" class="tab-panel">
       <p class="info-note">Oitavas de final — Jogos 89 a 96. Selecione os times de cada confronto e informe o placar. A seleção correta dos times gera <span>pontuação PP (20 pts)</span> para quem acertou o posicionamento.</p>
       <div id="oitavas-content"></div>
@@ -413,8 +409,8 @@ async function fixarBonusClassificacao(){
   if(!confirm('Isso vai FIXAR o bônus de classificação de grupo de todos os '+participants.length+' participantes com os valores atuais. Essa ação não recalcula automaticamente depois. Confirma?')) return;
 
   const calculo = calcularTodosBonus();
-  // bonusGrupoFixado removido — o site sempre recalcula do zero
-  delete results.bonusGrupoFixado;
+  results.bonusGrupoFixado = {};
+  calculo.forEach(c=>{ results.bonusGrupoFixado[c.nome] = c.bonus; });
   await saveResults();
   showToast('Bônus de classificação fixado para '+calculo.length+' participantes!','ok');
   buildClassificacao();
@@ -568,7 +564,7 @@ function buildClassificacao(){
   </div>`;
 
   // Bloco de fixação do bônus de classificação de grupo
-  const jaFixado = false; // sempre recalcula dinamicamente
+  const jaFixado = results.bonusGrupoFixado && Object.keys(results.bonusGrupoFixado).length>0;
   const preview = calcularTodosBonus().sort((a,b)=>b.bonus-a.bonus);
   html += `<div style="margin-top:2rem;padding:1.2rem;background:${jaFixado?'rgba(0,255,136,.05)':'rgba(255,184,0,.05)'};border:1px solid ${jaFixado?'rgba(0,255,136,.2)':'rgba(255,184,0,.2)'};">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:.8rem;">
@@ -591,7 +587,7 @@ function buildClassificacao(){
           ${preview.map(p=>`<tr style="border-top:1px solid rgba(255,255,255,.05);">
             <td style="padding:.4rem .5rem;color:var(--white);">${p.nome}</td>
             <td style="padding:.4rem .5rem;text-align:center;color:var(--cyan);">${p.acertos}</td>
-            <td style="padding:.4rem .5rem;text-align:right;font-family:'Orbitron',monospace;color:var(--gold);font-weight:700;">${p.bonus}</td>
+            <td style="padding:.4rem .5rem;text-align:right;font-family:'Orbitron',monospace;color:var(--gold);font-weight:700;">${jaFixado&&results.bonusGrupoFixado[p.nome]!==undefined?results.bonusGrupoFixado[p.nome]:p.bonus}</td>
           </tr>`).join('')}
         </tbody>
       </table>
@@ -684,12 +680,12 @@ function vencedorJogo(numJogo){
   const gM=Number(r.golsM), gV=Number(r.golsV);
   if(gM>gV) return {vencedor:r.mandante, perdedor:r.visitante};
   if(gV>gM) return {vencedor:r.visitante, perdedor:r.mandante};
-  // Empate -> checa pênaltis (campos opcionais pensM/pensV)
-  if(r.pensM!==undefined && r.pensV!==undefined && r.pensM!==null && r.pensV!==null){
-    const pM=Number(r.pensM), pV=Number(r.pensV);
-    if(pM>pV) return {vencedor:r.mandante, perdedor:r.visitante};
-    if(pV>pM) return {vencedor:r.visitante, perdedor:r.mandante};
-  }
+  // Empate → usa o campo 'passante' definido manualmente pelo admin (resultado dos pênaltis)
+  if(r.passante===r.mandante) return {vencedor:r.mandante, perdedor:r.visitante};
+  if(r.passante===r.visitante) return {vencedor:r.visitante, perdedor:r.mandante};
+
+
+
   return {vencedor:null, perdedor:null}; // empate sem pênaltis definidos ainda
 }
 
@@ -748,6 +744,11 @@ function buildMM(fase){
     const mV=r.golsM??''; const vV=r.golsV??'';
     const pendente = !mT || !vT;
 
+    // Verifica se é empate com placar preenchido → mostrar seletor de quem avança nos pênaltis
+    const temPlacar = mV!=='' && vV!=='';
+    const isEmpate = temPlacar && Number(mV)===Number(vV);
+    const passante = r.passante || ''; // quem o admin definiu que avança (nos pênaltis)
+
     // Detecta se home/away desse jogo é um slot "terceiro" -> mostra dropdown editável
     const homeIsTerceiro = confR32 && confR32.home.tipo==='terceiro';
     const awayIsTerceiro = confR32 && confR32.away.tipo==='terceiro';
@@ -781,6 +782,16 @@ function buildMM(fase){
         ${vTHtml}
       </div>
       ${pendente?'<div style="font-size:.68rem;color:var(--grey);text-align:center;margin-top:.5rem;font-style:italic;">Aguardando classificação dos grupos / resultado de jogo anterior</div>':''}
+      ${isEmpate?`<div style="margin-top:.7rem;padding:.6rem .8rem;background:rgba(255,184,0,.06);border:1px solid rgba(255,184,0,.2);display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+        <span style="font-family:'Orbitron',monospace;font-size:.65rem;color:var(--gold);letter-spacing:.08em;white-space:nowrap;">⚽ PÊNALTIS — QUEM AVANÇA:</span>
+        <select style="flex:1;min-width:140px;" class="team-select${passante?' selected':''}"
+          onchange="setPassante('${key}',this.value)">
+          <option value="">— Selecionar —</option>
+          ${mT?`<option value="${mT}"${passante===mT?' selected':''}>${mT}</option>`:''}
+          ${vT?`<option value="${vT}"${passante===vT?' selected':''}>${vT}</option>`:''}
+        </select>
+        ${passante?`<span style="font-size:.72rem;color:var(--green);font-family:'Orbitron',monospace;">✅ ${passante} avança</span>`:'<span style="font-size:.68rem;color:var(--grey);font-style:italic;">Selecione o vencedor dos pênaltis</span>'}
+      </div>`:''}
     </div>`;
   }
   document.getElementById(`${fase}-content`).innerHTML=html;
@@ -790,6 +801,12 @@ function setAjusteManual(key, campo, valor){
   if(!results.ajusteManual) results.ajusteManual = {};
   if(!results.ajusteManual[key]) results.ajusteManual[key] = {};
   results.ajusteManual[key][campo] = valor || null;
+  rebuildFasesEliminatorias();
+}
+
+function setPassante(key, valor){
+  if(!results[key]) results[key]={};
+  results[key].passante = valor || null;
   rebuildFasesEliminatorias();
 }
 
@@ -813,7 +830,6 @@ function setScore(key,field,val,el){
 // Re-resolve todas as fases do mata-mata em cascata (cada fase depende da anterior)
 function rebuildFasesEliminatorias(){
   buildMM('dezesseis');
-  buildMM('fase32');
   buildMM('oitavas');
   buildMM('quartas');
   buildMM('semis');
