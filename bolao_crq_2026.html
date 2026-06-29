@@ -572,7 +572,7 @@ function calcBonusGrupoPP(p){
 function calcScoreFiltered(p, filterFn){
   let total=0,exatos=0,p40=0,p30=0,p10=0,p0=0,avaliados=0,bonus=0,bonusMataMata=0;
   const jogos = filterFn ? p.jogos.filter(filterFn) : p.jogos;
-  for(const j of jogos){const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;const res=results[key];if(!res||res.golsM===null||res.golsV===null)continue;if(j.golsM===null||j.golsV===null)continue;avaliados++;const pM=j.golsM,pV=j.golsV,rM=Number(res.golsM),rV=Number(res.golsV);if(pM===rM&&pV===rV){total+=PTS.EXATO;exatos++;}else{const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E',ok=rv===pv,aM=pM===rM,aV=pV===rV;if(ok&&(aM||aV)){total+=PTS.VENC_GOL;p40++;}else if(ok){total+=PTS.RESULTADO;p30++;}else if(aM||aV){total+=PTS.GOL_UM;p10++;}else{p0++;}}if(j.fase!=='grupos'){if(res.mandante&&j.mandante===res.mandante){total+=PTS.PP;bonus+=PTS.PP;bonusMataMata+=PTS.PP;}if(res.visitante&&j.visitante===res.visitante){total+=PTS.PP;bonus+=PTS.PP;bonusMataMata+=PTS.PP;}}}
+  for(const j of jogos){const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;const res=results[key];if(!res||res.golsM===null||res.golsM===undefined||res.golsV===null||res.golsV===undefined)continue;if(j.golsM===null||j.golsV===null)continue;avaliados++;const pM=j.golsM,pV=j.golsV,rM=Number(res.golsM),rV=Number(res.golsV);if(pM===rM&&pV===rV){total+=PTS.EXATO;exatos++;}else{const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E',ok=rv===pv,aM=pM===rM,aV=pV===rV;if(ok&&(aM||aV)){total+=PTS.VENC_GOL;p40++;}else if(ok){total+=PTS.RESULTADO;p30++;}else if(aM||aV){total+=PTS.GOL_UM;p10++;}else{p0++;}}if(j.fase!=='grupos'){if(res.mandante&&j.mandante===res.mandante){total+=PTS.PP;bonus+=PTS.PP;bonusMataMata+=PTS.PP;}if(res.visitante&&j.visitante===res.visitante){total+=PTS.PP;bonus+=PTS.PP;bonusMataMata+=PTS.PP;}}}
   // Bônus PP da fase de grupos (6.1) — só no cálculo geral (sem filtro de fase), pois depende da fase de grupos completa
   let bonusClassificacao = 0;
   if(!filterFn){
@@ -584,7 +584,7 @@ function calcScoreFiltered(p, filterFn){
   return{total,exatos,p40,p30,p10,p0,avaliados,bonus,bonusMataMata,bonusClassificacao,pctExatos:pct(exatos),pctP40:pct(p40),pctP30:pct(p30),pctP10:pct(p10),pctP0:pct(p0)};}
 function calcScore(p){ return calcScoreFiltered(p, null); }
 function calcScorePhase(p, filterFn){ return calcScoreFiltered(p, filterFn); }
-function getPts(j,key){const r=results[key];if(!r||r.golsM===null||r.golsV===null||j.golsM===null||j.golsV===null)return null;const pM=j.golsM,pV=j.golsV,rM=Number(r.golsM),rV=Number(r.golsV);if(pM===rM&&pV===rV)return 50;const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E';if(rv===pv&&(pM===rM||pV===rV))return 40;if(rv===pv)return 30;if(pM===rM||pV===rV)return 10;return 0;}
+function getPts(j,key){const r=results[key];if(!r||r.golsM===null||r.golsM===undefined||r.golsV===null||r.golsV===undefined||j.golsM===null||j.golsV===null)return null;const pM=j.golsM,pV=j.golsV,rM=Number(r.golsM),rV=Number(r.golsV);if(pM===rM&&pV===rV)return 50;const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E';if(rv===pv&&(pM===rM||pV===rV))return 40;if(rv===pv)return 30;if(pM===rM||pV===rV)return 10;return 0;}
 function renderParticipants(){const el=document.getElementById('participants-list');if(!participants.length){el.innerHTML='';return;}el.innerHTML=`<div style="margin-bottom:1rem;font-family:'Orbitron',monospace;font-size:0.7rem;letter-spacing:0.2em;color:var(--grey);text-transform:uppercase;">${participants.length} palpiteiro${participants.length!==1?'s':''} carregado${participants.length!==1?'s':''}</div><div class="participants-grid">${participants.map((p,i)=>`<div class="participant-card" onclick="openModal(${i})"><div class="pcard-avatar">${initials(p.nome)}</div><div style="flex:1"><div class="pcard-name">${p.nome}</div><div class="pcard-sub">${p.email||'sem e-mail'} · ${p.jogos.length} jogos</div></div><button class="pcard-remove" onclick="event.stopPropagation();removeP(${i})" title="Remover">✕</button></div>`).join('')}</div>`;document.getElementById('stat-p').textContent=participants.length;}
 function removeP(i){checkAdmin(()=>{participants.splice(i,1);save();renderParticipants();renderRanking();renderDashboard();showToast('Participante removido','info');});}
 function renderRanking(){const el=document.getElementById('ranking-content');if(!participants.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏆</div><div class="empty-text">Carregue as planilhas para ver o ranking</div></div>`;document.getElementById('stat-l').textContent='—';return;}const scored=participants.map((p,i)=>({...p,i,score:calcScore(p)})).sort((a,b)=>{
@@ -834,7 +834,7 @@ function renderDashboard(){
   for(const p of participants){
     for(const key of todasChaves(p)){
       const r = results[key];
-      if(!r||r.golsM===null||r.golsV===null) continue;
+      if(!r||r.golsM===null||r.golsM===undefined||r.golsV===null||r.golsV===undefined) continue;
       const j = key.startsWith('g')
         ? p.jogos.find(jj=>jj.fase==='grupos'&&`g${jj.idx}`===key)
         : p.jogos.find(jj=>jj.fase!=='grupos'&&`mm${jj.jogo}`===key);
@@ -884,7 +884,7 @@ function renderDashboard(){
       const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;
       if(!jogosHojeSet.has(key)) continue;
       const r=results[key];
-      if(!r||r.golsM===null||r.golsV===null) continue;
+      if(!r||r.golsM===null||r.golsM===undefined||r.golsV===null||r.golsV===undefined) continue;
       teveJogoHoje=true;
       pts+=getPts(j,key)||0;
       // PP bonus
