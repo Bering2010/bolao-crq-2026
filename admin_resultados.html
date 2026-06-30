@@ -492,22 +492,26 @@ const CHAVE_R32 = {
 // ── CHAVEAMENTO POR VENCEDOR — Oitavas (89-96), Quartas (97-100), Semis (101-102), 3ºlugar(103), Final(104) ──
 // Cada entrada indica de quais jogos vêm o mandante/visitante (vencedor daquele confronto anterior)
 const CHAVE_VENCEDOR = {
-  89:{home:73, away:74},
-  90:{home:75, away:76},
-  91:{home:77, away:78},
-  92:{home:79, away:80},
-  93:{home:81, away:82},
-  94:{home:83, away:84},
-  95:{home:85, away:86},
-  96:{home:87, away:88},
-  97:{home:89, away:90},
-  98:{home:91, away:92},
-  99:{home:93, away:94},
-  100:{home:95, away:96},
-  101:{home:97, away:98},
-  102:{home:99, away:100},
-  103:{home:101, away:102, tipo:'perdedores'}, // 3º lugar: PERDEDORES das semis
-  104:{home:101, away:102, tipo:'vencedores'}, // final: VENCEDORES das semis
+  // Oitavas de final — conforme planilha oficial FIFA
+  89:{home:74, away:77},   // Vencedor 74 x Vencedor 77
+  90:{home:73, away:75},   // Vencedor 73 x Vencedor 75
+  91:{home:76, away:78},   // Vencedor 76 x Vencedor 78
+  92:{home:79, away:80},   // Vencedor 79 x Vencedor 80
+  93:{home:83, away:84},   // Vencedor 83 x Vencedor 84
+  94:{home:81, away:82},   // Vencedor 81 x Vencedor 82
+  95:{home:86, away:88},   // Vencedor 86 x Vencedor 88
+  96:{home:85, away:87},   // Vencedor 85 x Vencedor 87
+  // Quartas de final
+  97:{home:89, away:90},   // Vencedor 89 x Vencedor 90
+  98:{home:93, away:94},   // Vencedor 93 x Vencedor 94
+  99:{home:91, away:92},   // Vencedor 91 x Vencedor 92
+  100:{home:95, away:96},  // Vencedor 95 x Vencedor 96
+  // Semifinais
+  101:{home:97, away:98},  // Vencedor 97 x Vencedor 98
+  102:{home:99, away:100}, // Vencedor 99 x Vencedor 100
+  // 3º lugar e Final
+  103:{home:101, away:102, tipo:'perdedores'}, // Perdedor 101 x Perdedor 102
+  104:{home:101, away:102, tipo:'vencedores'}, // Vencedor 101 x Vencedor 102
 };
 
 function teamSelectOpts(sel){
