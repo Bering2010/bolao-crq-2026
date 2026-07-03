@@ -109,7 +109,7 @@ function calcScore(p){
   for(const j of p.jogos){
     const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;
     const res=results[key];
-    if(!res||res.golsM===null||res.golsV===null)continue;
+    if(!res||res.golsM===null||res.golsM===undefined||res.golsV===null||res.golsV===undefined)continue;
     if(j.golsM===null||j.golsV===null)continue;
     const pM=j.golsM,pV=j.golsV,rM=Number(res.golsM),rV=Number(res.golsV);
     if(pM===rM&&pV===rV){total+=PTS.EXATO;}
@@ -124,13 +124,18 @@ function calcScore(p){
       if(res.visitante&&j.visitante===res.visitante)total+=PTS.PP;
     }
   }
+  // Bônus fixo de classificação de grupo
+  if(results.bonusGrupoFixado && results.bonusGrupoFixado[p.nome]!==undefined){
+    total += results.bonusGrupoFixado[p.nome];
+  }
   return total;
 }
 
 function calcPtsSimulado(j, simResults){
   const key = j.fase==='grupos' ? `g${j.idx}` : `mm${j.jogo}`;
   const r = simResults[key];
-  if(!r || r.gM===null || r.gV===null || j.golsM===null || j.golsV===null) return null;
+  if(!r || r.gM===null || r.gM===undefined || r.gV===null || r.gV===undefined) return null;
+  if(j.golsM===null||j.golsV===null) return null;
   const pM=j.golsM, pV=j.golsV, rM=Number(r.gM), rV=Number(r.gV);
   if(pM===rM && pV===rV) return 50;
   const rv=rM>rV?'M':rM<rV?'V':'E', pv=pM>pV?'M':pM<pV?'V':'E';
@@ -142,7 +147,7 @@ function calcPtsSimulado(j, simResults){
 
 function getPtsReal(j,key){
   const r=results[key];
-  if(!r||r.golsM===null||r.golsV===null||j.golsM===null||j.golsV===null)return 0;
+  if(!r||r.golsM===null||r.golsM===undefined||r.golsV===null||r.golsV===undefined||j.golsM===null||j.golsV===null)return 0;
   const pM=j.golsM,pV=j.golsV,rM=Number(r.golsM),rV=Number(r.golsV);
   if(pM===rM&&pV===rV)return 50;
   const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E';
@@ -152,22 +157,46 @@ function getPtsReal(j,key){
   return 0;
 }
 
+function getPPReal(j,key){
+  // Retorna os pontos PP reais de um jogo eliminatório já com resultado lançado
+  const r=results[key];
+  if(!r||r.golsM===null||r.golsM===undefined||r.golsV===null||r.golsV===undefined) return 0;
+  if(j.fase==='grupos') return 0;
+  let pp=0;
+  if(r.mandante&&j.mandante===r.mandante) pp+=PTS.PP;
+  if(r.visitante&&j.visitante===r.visitante) pp+=PTS.PP;
+  return pp;
+}
+
 function calcScoreSim(p, jogosHojeSet){
+  // Base: pontuação real atual completa
   let base = calcScore(p);
+  // Subtrai os pontos (PJ + PP) dos jogos de hoje que já têm resultado real
+  // para depois substituir pelos pontos simulados
   for(const j of p.jogos){
     const key = j.fase==='grupos' ? `g${j.idx}` : `mm${j.jogo}`;
     if(!jogosHojeSet.has(key)) continue;
     const r = results[key];
-    if(r && r.golsM!==null && r.golsV!==null) {
+    if(r && r.golsM!==null && r.golsM!==undefined && r.golsV!==null && r.golsV!==undefined){
       base -= getPtsReal(j, key);
+      base -= getPPReal(j, key);
     }
   }
+  // Adiciona pontos simulados (PJ) dos jogos de hoje
   let simExtra = 0;
   for(const j of p.jogos){
     const key = j.fase==='grupos' ? `g${j.idx}` : `mm${j.jogo}`;
     if(!jogosHojeSet.has(key)) continue;
     const pts = calcPtsSimulado(j, simPlacar);
     if(pts !== null) simExtra += pts;
+    // PP simulado: usa os nomes oficiais do admin como resultado simulado
+    if(j.fase!=='grupos'){
+      const resOficial = results[key];
+      if(resOficial && resOficial.mandante && resOficial.visitante){
+        if(j.mandante===resOficial.mandante) simExtra+=PTS.PP;
+        if(j.visitante===resOficial.visitante) simExtra+=PTS.PP;
+      }
+    }
   }
   return {total: base + simExtra, simExtra};
 }
