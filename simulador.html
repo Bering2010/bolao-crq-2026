@@ -249,14 +249,23 @@ function render(){
 
   const jogoInfos = jogosHoje.map(key=>{
     let mandante='?', visitante='?';
-    for(const p of participants){
-      const j = key.startsWith('g')
-        ? p.jogos.find(j=>j.fase==='grupos'&&`g${j.idx}`===key)
-        : p.jogos.find(j=>j.fase!=='grupos'&&`mm${j.jogo}`===key);
-      if(j){mandante=j.mandante; visitante=j.visitante; break;}
+    // Prioriza os nomes OFICIAIS resolvidos pelo admin (results[key]),
+    // já que nos jogos eliminatórios cada palpiteiro escreveu nomes diferentes.
+    const resOficial = results[key];
+    if(resOficial && resOficial.mandante && resOficial.visitante){
+      mandante = resOficial.mandante;
+      visitante = resOficial.visitante;
+    } else {
+      // Fallback: usa o palpite do primeiro participante (fase de grupos)
+      for(const p of participants){
+        const j = key.startsWith('g')
+          ? p.jogos.find(j=>j.fase==='grupos'&&`g${j.idx}`===key)
+          : p.jogos.find(j=>j.fase!=='grupos'&&`mm${j.jogo}`===key);
+        if(j){mandante=j.mandante; visitante=j.visitante; break;}
+      }
     }
     const real = results[key];
-    const temReal = real && real.golsM!==null && real.golsV!==null;
+    const temReal = real && real.golsM!==null && real.golsM!==undefined && real.golsV!==null && real.golsV!==undefined;
     if(temReal && simPlacar[key]===undefined){
       simPlacar[key] = {gM: Number(real.golsM), gV: Number(real.golsV)};
     }
