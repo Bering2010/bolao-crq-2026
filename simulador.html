@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<title>SIMULADOR — BOLÃO CRQ 2026</title>
+<title>Simulador — Em Manutenção · Bolão CRQ 2026</title>
 <style>
+  
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
 :root{--gold:#FFB800;--navy:#020B1E;--navy-card:#0D1F3C;--cyan:#00D4FF;--white:#FFFFFF;--grey:#8899BB;--green:#00FF88;--purple:#a78bfa;--purple-dark:#7c3aed;}
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -66,344 +65,155 @@ main{max-width:1200px;margin:0 auto;padding:2.5rem 1.5rem 5rem;}
 .sim-rank-avatar.av5{background:linear-gradient(135deg,#1a3a5c,#0d2040);color:var(--cyan);border:1px solid rgba(0,212,255,.3);}
 .sim-rank-avatar.av6{background:linear-gradient(135deg,#1a3a5c,#0d2040);color:var(--cyan);border:1px solid rgba(0,212,255,.3);}
 .sim-rank-avatar.av7{background:linear-gradient(135deg,#1a3a5c,#0d2040);color:var(--cyan);border:1px solid rgba(0,212,255,.3);}
+
+
+  .manutencao-wrap {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .manutencao-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    animation: spin-slow 8s linear infinite;
+  }
+
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .manutencao-tag {
+    font-family: 'Orbitron', monospace;
+    font-size: .65rem;
+    letter-spacing: .35em;
+    color: var(--gold);
+    text-transform: uppercase;
+    padding: .4rem 1.2rem;
+    border: 1px solid rgba(255,184,0,.25);
+    background: rgba(255,184,0,.05);
+    margin-bottom: 1.5rem;
+    display: inline-block;
+  }
+
+  .manutencao-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.8rem, 5vw, 3rem);
+    font-weight: 900;
+    color: var(--white);
+    line-height: 1.1;
+    margin-bottom: .5rem;
+  }
+
+  .manutencao-title span {
+    background: linear-gradient(135deg, var(--gold), #FF8C00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .manutencao-sub {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.1rem;
+    color: var(--grey);
+    margin-bottom: 2.5rem;
+    max-width: 400px;
+  }
+
+  .manutencao-line {
+    width: 80px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), var(--cyan));
+    margin: 0 auto 2.5rem;
+  }
+
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    background: transparent;
+    border: 1px solid rgba(0,212,255,.3);
+    color: var(--cyan);
+    font-family: 'Orbitron', monospace;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    padding: .85rem 2rem;
+    cursor: pointer;
+    text-decoration: none;
+    clip-path: polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+    transition: all .3s;
+  }
+
+  .back-btn:hover {
+    background: rgba(0,212,255,.08);
+    border-color: var(--cyan);
+  }
+
+  /* Animated background grid */
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 70% 70% at center, black, transparent);
+    z-index: 0;
+  }
+
+  .dots {
+    display: flex;
+    gap: .5rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+    animation: dot-pulse 1.4s ease-in-out infinite;
+  }
+  .dot:nth-child(2) { animation-delay: .2s; }
+  .dot:nth-child(3) { animation-delay: .4s; }
+
+  @keyframes dot-pulse {
+    0%,80%,100% { transform: scale(.6); opacity: .4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
 </style>
 </head>
 <body>
+
+<div class="bg-grid"></div>
 
 <div class="topbar">
   <div class="topbar-title">🔮 SIMULADOR DE PALPITES</div>
   <a href="bolao_crq_2026.html" class="back-link">← VOLTAR AO BOLÃO</a>
 </div>
 
-<main>
-  <div class="page-header">
-    <h1>SIMULE OS PLACARES <span>DE HOJE</span></h1>
-    <p>Digite os placares dos jogos do dia e veja o Top 3 projetado. Isso é só uma simulação — não afeta a pontuação real do bolão.</p>
+<div class="manutencao-wrap">
+  <div class="manutencao-icon">⚙️</div>
+  <div class="manutencao-tag">Aviso do Sistema</div>
+  <h1 class="manutencao-title">EM <span>MANUTENÇÃO</span></h1>
+  <div class="manutencao-line"></div>
+  <div class="dots">
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
   </div>
-  <div id="content"><div class="loading">Carregando dados do bolão...</div></div>
-  <button class="reset-btn" onclick="resetSim()">↺ LIMPAR SIMULAÇÃO</button>
-</main>
+  <p class="manutencao-sub">O simulador está temporariamente indisponível. Voltará em breve com melhorias!</p>
+  <a href="bolao_crq_2026.html" class="back-btn">← Voltar ao Bolão</a>
+</div>
 
-<script>
-// ── FIREBASE CONFIG ──
-const firebaseConfig = {
-  apiKey: "AIzaSyDKFfrS-SVBhQUBbJr0QrYCoLNEG7MTTyA",
-  authDomain: "bolao-crq-2026.firebaseapp.com",
-  projectId: "bolao-crq-2026",
-  storageBucket: "bolao-crq-2026.firebasestorage.app",
-  messagingSenderId: "363674646815",
-  appId: "1:363674646815:web:eab23d2f79e66ffee4182a"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
-const PTS={EXATO:50,VENC_GOL:40,RESULTADO:30,GOL_UM:10,PP:20};
-let participants = [];
-let results = {};
-let simPlacar = {};
-
-function initials(nome){const p=nome.trim().split(' ').filter(Boolean);return p.length>=2?(p[0][0]+p[p.length-1][0]).toUpperCase():p[0]?.[0]?.toUpperCase()||'?';}
-
-function calcScore(p){
-  let total=0;
-  for(const j of p.jogos){
-    const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;
-    const res=results[key];
-    if(!res||res.golsM===null||res.golsM===undefined||res.golsV===null||res.golsV===undefined)continue;
-    if(j.golsM===null||j.golsV===null)continue;
-    const pM=j.golsM,pV=j.golsV,rM=Number(res.golsM),rV=Number(res.golsV);
-    if(pM===rM&&pV===rV){total+=PTS.EXATO;}
-    else{
-      const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E',ok=rv===pv,aM=pM===rM,aV=pV===rV;
-      if(ok&&(aM||aV)){total+=PTS.VENC_GOL;}
-      else if(ok){total+=PTS.RESULTADO;}
-      else if(aM||aV){total+=PTS.GOL_UM;}
-    }
-    if(j.fase!=='grupos'){
-      if(res.mandante&&j.mandante===res.mandante)total+=PTS.PP;
-      if(res.visitante&&j.visitante===res.visitante)total+=PTS.PP;
-    }
-  }
-  // Bônus fixo de classificação de grupo
-  if(results.bonusGrupoFixado && results.bonusGrupoFixado[p.nome]!==undefined){
-    total += results.bonusGrupoFixado[p.nome];
-  }
-  return total;
-}
-
-function calcPtsSimulado(j, simResults){
-  const key = j.fase==='grupos' ? `g${j.idx}` : `mm${j.jogo}`;
-  const r = simResults[key];
-  if(!r || r.gM===null || r.gV===null || j.golsM===null || j.golsV===null) return null;
-  const pM=j.golsM, pV=j.golsV, rM=Number(r.gM), rV=Number(r.gV);
-  if(pM===rM && pV===rV) return 50;
-  const rv=rM>rV?'M':rM<rV?'V':'E', pv=pM>pV?'M':pM<pV?'V':'E';
-  if(rv===pv && (pM===rM||pV===rV)) return 40;
-  if(rv===pv) return 30;
-  if(pM===rM||pV===rV) return 10;
-  return 0;
-}
-
-function getPtsReal(j,key){
-  const r=results[key];
-  if(!r||r.golsM===null||r.golsV===null||j.golsM===null||j.golsV===null)return 0;
-  const pM=j.golsM,pV=j.golsV,rM=Number(r.golsM),rV=Number(r.golsV);
-  if(pM===rM&&pV===rV)return 50;
-  const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E';
-  if(rv===pv&&(pM===rM||pV===rV))return 40;
-  if(rv===pv)return 30;
-  if(pM===rM||pV===rV)return 10;
-  return 0;
-}
-
-function calcScoreSim(p, jogosHojeSet){
-  let base = calcScore(p);
-  for(const j of p.jogos){
-    const key = j.fase==='grupos' ? `g${j.idx}` : `mm${j.jogo}`;
-    if(!jogosHojeSet.has(key)) continue;
-    const r = results[key];
-    if(r && r.golsM!==null && r.golsV!==null) {
-      base -= getPtsReal(j, key);
-    }
-  }
-  let simExtra = 0;
-  for(const j of p.jogos){
-    const key = j.fase==='grupos' ? `g${j.idx}` : `mm${j.jogo}`;
-    if(!jogosHojeSet.has(key)) continue;
-    const pts = calcPtsSimulado(j, simPlacar);
-    if(pts !== null) simExtra += pts;
-  }
-  return {total: base + simExtra, simExtra};
-}
-
-function buildDatasJogos(){
-  const d = {};
-  // Datas corretas extraídas da planilha oficial (horário de Brasília)
-  const r1 = [
-    [1,'2026-06-11'],[2,'2026-06-11'],
-    [3,'2026-06-12'],[4,'2026-06-12'],
-    [5,'2026-06-13'],[6,'2026-06-13'],[7,'2026-06-13'],
-    [8,'2026-06-14'],[9,'2026-06-14'],[10,'2026-06-14'],[11,'2026-06-14'],[12,'2026-06-14'],
-    [13,'2026-06-15'],[14,'2026-06-15'],[15,'2026-06-15'],[16,'2026-06-15'],
-    [17,'2026-06-16'],[18,'2026-06-16'],[19,'2026-06-16'],
-    [20,'2026-06-17'],[21,'2026-06-17'],[22,'2026-06-17'],[23,'2026-06-17'],[24,'2026-06-17'],
-  ];
-  const r2 = [
-    [25,'2026-06-18'],[26,'2026-06-18'],[27,'2026-06-18'],[28,'2026-06-18'],
-    [29,'2026-06-19'],[30,'2026-06-19'],[31,'2026-06-19'],
-    [32,'2026-06-20'],[33,'2026-06-20'],[34,'2026-06-20'],[35,'2026-06-20'],[36,'2026-06-20'],
-    [37,'2026-06-21'],[38,'2026-06-21'],[39,'2026-06-21'],[40,'2026-06-21'],
-    [41,'2026-06-22'],[42,'2026-06-22'],[43,'2026-06-22'],
-    [44,'2026-06-23'],[45,'2026-06-23'],[46,'2026-06-23'],[47,'2026-06-23'],[48,'2026-06-23'],
-  ];
-  const r3 = [
-    [49,'2026-06-24'],[50,'2026-06-24'],[51,'2026-06-24'],[52,'2026-06-24'],
-    [53,'2026-06-24'],[54,'2026-06-24'],
-    [55,'2026-06-25'],[56,'2026-06-25'],[57,'2026-06-25'],[58,'2026-06-25'],
-    [59,'2026-06-25'],[60,'2026-06-25'],
-    [61,'2026-06-26'],[62,'2026-06-26'],[63,'2026-06-26'],[64,'2026-06-26'],
-    [65,'2026-06-27'],[66,'2026-06-27'],[67,'2026-06-27'],[68,'2026-06-27'],
-    [69,'2026-06-27'],[70,'2026-06-27'],[71,'2026-06-27'],[72,'2026-06-27'],
-  ];
-  for(const [idx,ds] of [...r1,...r2,...r3]) d[`g${idx}`]=new Date(ds+'T15:00:00Z');
-  const elim = [
-    ['mm73','2026-06-28'],
-    ['mm74','2026-06-29'],['mm75','2026-06-29'],['mm76','2026-06-29'],
-    ['mm77','2026-06-30'],['mm78','2026-06-30'],['mm79','2026-06-30'],
-    ['mm80','2026-07-01'],['mm81','2026-07-01'],['mm82','2026-07-01'],
-    ['mm83','2026-07-02'],['mm84','2026-07-02'],
-    ['mm85','2026-07-03'],['mm86','2026-07-03'],['mm87','2026-07-03'],['mm88','2026-07-03'],
-    ['mm89','2026-07-04'],['mm90','2026-07-04'],
-    ['mm91','2026-07-05'],['mm92','2026-07-05'],
-    ['mm93','2026-07-06'],['mm94','2026-07-06'],
-    ['mm95','2026-07-07'],['mm96','2026-07-07'],
-    ['mm97','2026-07-09'],['mm98','2026-07-10'],
-    ['mm99','2026-07-11'],['mm100','2026-07-11'],
-    ['mm101','2026-07-14'],['mm102','2026-07-15'],
-    ['mm103','2026-07-18'],['mm104','2026-07-19'],
-  ];
-  for(const [k,ds] of elim) d[k]=new Date(ds+'T15:00:00Z');
-  return d;
-}
-
-function getJogosHoje(){
-  const agora = new Date();
-  const hojeStr = agora.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'});
-  const DATAS_JOGOS = buildDatasJogos();
-  const jogosHoje = [];
-  for(const [key, dataJogo] of Object.entries(DATAS_JOGOS)){
-    const dStr = dataJogo.toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'});
-    if(dStr === hojeStr) jogosHoje.push(key);
-  }
-  return jogosHoje;
-}
-
-function render(){
-  const el = document.getElementById('content');
-  if(!participants.length){
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div>Nenhum palpite carregado ainda no bolão.</div></div>`;
-    return;
-  }
-  const jogosHoje = getJogosHoje();
-  if(!jogosHoje.length){
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><div>Nenhum jogo programado para hoje.</div></div>`;
-    return;
-  }
-  const jogosHojeSet = new Set(jogosHoje);
-
-  const jogoInfos = jogosHoje.map(key=>{
-    let mandante='?', visitante='?';
-    for(const p of participants){
-      const j = key.startsWith('g')
-        ? p.jogos.find(j=>j.fase==='grupos'&&`g${j.idx}`===key)
-        : p.jogos.find(j=>j.fase!=='grupos'&&`mm${j.jogo}`===key);
-      if(j){mandante=j.mandante; visitante=j.visitante; break;}
-    }
-    const real = results[key];
-    const temReal = real && real.golsM!==null && real.golsV!==null;
-    if(temReal && simPlacar[key]===undefined){
-      simPlacar[key] = {gM: Number(real.golsM), gV: Number(real.golsV)};
-    }
-    return {key, mandante, visitante, temReal, real};
-  });
-
-  let matchesHTML = jogoInfos.map((info,idx)=>{
-    const cur = simPlacar[info.key];
-    const gM = (cur && cur.gM!==null && cur.gM!==undefined) ? cur.gM : '';
-    const gV = (cur && cur.gV!==null && cur.gV!==undefined) ? cur.gV : '';
-    const hasResult = cur && cur.gM!==null && cur.gV!==null && cur.gM!==undefined && cur.gV!==undefined;
-    const realBadge = info.temReal
-      ? `<div class="sim-real-badge">✅ RESULTADO REAL: ${info.real.golsM} x ${info.real.golsV}</div>` : '';
-    return `<div class="sim-match${hasResult?' has-result':''}" id="sim-match-${idx}">
-      <div class="sim-teams">
-        <span class="sim-team">${info.mandante}</span>
-        <span class="sim-vs">VS</span>
-        <span class="sim-team right">${info.visitante}</span>
-      </div>
-      <div class="sim-inputs">
-        <input class="sim-score-input" type="number" min="0" max="20" value="${gM}"
-          placeholder="0" oninput="simUpdate('${info.key}','M',this.value,${idx})" id="sim-m-${idx}">
-        <span class="sim-dash">×</span>
-        <input class="sim-score-input" type="number" min="0" max="20" value="${gV}"
-          placeholder="0" oninput="simUpdate('${info.key}','V',this.value,${idx})" id="sim-v-${idx}">
-      </div>
-      ${realBadge}
-    </div>`;
-  }).join('');
-
-  const podioHTML = buildSimPodium(jogosHojeSet);
-
-  el.innerHTML = `<div class="sim-wrapper">
-    <div class="sim-matches">${matchesHTML}</div>
-    <div class="sim-podium">
-      <div class="sim-podium-title">🏆 PROJEÇÃO SIMULADA</div>
-      <div id="sim-podium-inner">${podioHTML}</div>
-      <div class="sim-hint">Preencha os placares à esquerda para atualizar a projeção</div>
-    </div>
-  </div>`;
-}
-
-function buildSimPodium(jogosHojeSet){
-  const algumPlacar = Object.keys(simPlacar).some(k=>{
-    const s=simPlacar[k]; return s && s.gM!==null && s.gV!==null && s.gM!==undefined && s.gV!==undefined;
-  });
-  if(!algumPlacar) return `<div class="sim-podium-empty">Digite um placar ao lado<br>para ver a projeção</div>`;
-
-  const ranked = participants.map(p=>{
-    const sim = calcScoreSim(p, jogosHojeSet);
-    return {nome:p.nome, total:sim.total, simExtra:sim.simExtra};
-  });
-
-  // Top 3 da RODADA: quem somou mais pts nos jogos de hoje
-  const topRodada = [...ranked].sort((a,b)=>b.simExtra-a.simExtra).slice(0,3);
-  const medalha = ['🥇','🥈','🥉'];
-  const avatarCls = ['av1','av2','av3'];
-
-  const rowsRodada = topRodada.map((p,i)=>{
-    const delta = p.simExtra > 0
-      ? `<span class="sim-rank-delta up">+${p.simExtra} pts nesta rodada</span>`
-      : `<span class="sim-rank-delta same">sem ganhos hoje</span>`;
-    const nomeParts = p.nome.split(' ');
-    const nomeShort = nomeParts.length>1 ? `${nomeParts[0]} ${nomeParts[nomeParts.length-1]}` : p.nome;
-    return `<div class="sim-rank-row">
-      <span class="sim-rank-pos">${medalha[i]}</span>
-      <div class="sim-rank-avatar ${avatarCls[i]}">${initials(p.nome)}</div>
-      <div class="sim-rank-info">
-        <div class="sim-rank-name">${nomeShort}</div>
-        ${delta}
-      </div>
-      <div style="text-align:right">
-        <span class="sim-rank-total" style="color:${i===0?'#FFB800':i===1?'#aaa':'#cd7f32'}">${p.simExtra}</span>
-        <div class="sim-rank-pts-label">pts rodada</div>
-      </div>
-    </div>`;
-  }).join('<div class="sim-separator"></div>');
-
-  // Top 4 do RANKING GERAL: maior pontuação acumulada
-  const topGeral = [...ranked].sort((a,b)=>b.total-a.total).slice(0,4);
-
-  const rowsGeral = topGeral.map((p,i)=>{
-    const nomeParts = p.nome.split(' ');
-    const nomeShort = nomeParts.length>1 ? `${nomeParts[0]} ${nomeParts[nomeParts.length-1]}` : p.nome;
-    const posLabel = `${i+1}º`;
-    return `<div class="sim-rank-row geral-row">
-      <span class="sim-rank-pos" style="font-family:'Orbitron',monospace;font-size:.75rem;color:var(--gold)">${posLabel}</span>
-      <div class="sim-rank-avatar av${i+4}">${initials(p.nome)}</div>
-      <div class="sim-rank-info">
-        <div class="sim-rank-name">${nomeShort}</div>
-        <span class="sim-rank-delta up">+${p.simExtra} hoje</span>
-      </div>
-      <div style="text-align:right">
-        <span class="sim-rank-total" style="color:var(--gold)">${p.total}</span>
-        <div class="sim-rank-pts-label">pts total</div>
-      </div>
-    </div>`;
-  }).join('<div class="sim-separator"></div>');
-
-  return `
-    <div class="sim-section-label rodada">⚡ TOP 3 DA RODADA</div>
-    ${rowsRodada}
-    <div class="sim-section-label geral" style="margin-top:1.2rem">🏅 TOP 4 RANKING GERAL</div>
-    ${rowsGeral}
-  `;
-}
-
-function simUpdate(key, lado, val, idx){
-  if(!simPlacar[key]) simPlacar[key] = {gM:null, gV:null};
-  const v = val==='' ? null : Math.max(0,parseInt(val)||0);
-  if(lado==='M') simPlacar[key].gM = v;
-  else simPlacar[key].gV = v;
-
-  const card = document.getElementById(`sim-match-${idx}`);
-  if(card){
-    const s=simPlacar[key];
-    if(s&&s.gM!==null&&s.gV!==null) card.classList.add('has-result');
-    else card.classList.remove('has-result');
-  }
-  const jogosHoje = getJogosHoje();
-  const inner = document.getElementById('sim-podium-inner');
-  if(inner) inner.innerHTML = buildSimPodium(new Set(jogosHoje));
-}
-
-function resetSim(){
-  simPlacar = {};
-  render();
-}
-
-async function loadData(){
-  try{
-    const pSnap = await db.collection('bolao').doc('participants').get();
-    participants = pSnap.exists ? JSON.parse(pSnap.data().data||'[]') : [];
-    const rSnap = await db.collection('bolao').doc('results').get();
-    results = rSnap.exists ? JSON.parse(rSnap.data().data||'{}') : {};
-  }catch(e){
-    document.getElementById('content').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div>Erro ao carregar dados: ${e.message}</div></div>`;
-    return;
-  }
-  render();
-}
-
-loadData();
-</script>
 </body>
 </html>
