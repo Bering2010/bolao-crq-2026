@@ -368,14 +368,6 @@ const FASES_PREMIADAS = [
     fechaApos: new Date('2026-07-12T01:00:00-03:00'),
     aposFaseId: 'r8' // só conta depois que as oitavas fecharem
   },
-  {
-    id:'r2f', label:'Semifinais',
-    filter: j => j.fase==='semisReal',
-    primeiroJogoData: new Date('2026-07-14T00:00:00-03:00'),
-    ultimoKey: 'mm102',
-    fechaApos: new Date('2026-07-16T01:00:00-03:00'),
-    aposFaseId: 'r4' // só conta depois que as quartas fecharem
-  },
 ];
 
 // Verifica se uma fase deve ser fechada automaticamente
@@ -569,10 +561,74 @@ function calcBonusGrupoPP(p){
   return bonus;
 }
 
+// ── JOGOS COM INVERSÃO DE MANDANTE/VISITANTE NA PLANILHA ──
+// Alguns palpiteiros tiveram mandante/visitante trocados na planilha Excel original.
+// Nesses jogos, o sistema aceita ambas as ordens como válidas para PP e placar.
+const JOGOS_INVERTIDOS = new Set(['mm90']); // Jogo 90: planilha inverteu Canadá × Marrocos
+
+// Verifica pontuação de um jogo, tratando corretamente jogos com inversão conhecida
+function calcPtsJogo(j, res){
+  const key = j.fase==='grupos' ? `g${j.idx}` : `mm${j.jogo}`;
+  const invertido = JOGOS_INVERTIDOS.has(key);
+  const rM=Number(res.golsM), rV=Number(res.golsV);
+  // Para jogos invertidos: testa placar normal E invertido, usa o melhor
+  const testarPlacar = (pM, pV) => {
+    if(pM===rM&&pV===rV) return 50;
+    const rv=rM>rV?'M':rM<rV?'V':'E', pv=pM>pV?'M':pM<pV?'V':'E', ok=rv===pv, aM=pM===rM, aV=pV===rV;
+    if(ok&&(aM||aV)) return 40;
+    if(ok) return 30;
+    if(aM||aV) return 10;
+    return 0;
+  };
+  const pM=j.golsM, pV=j.golsV;
+  if(pM===null||pV===null) return null;
+  let pts = testarPlacar(pM, pV);
+  if(invertido){
+    const ptsInv = testarPlacar(pV, pM); // testa com placar invertido
+    if(ptsInv > pts) pts = ptsInv;
+  }
+  return pts;
+}
+
+// Verifica PP (posicionamento) de um jogo, tratando invertidos
+function calcPPJogo(j, res){
+  const key = j.fase==='grupos' ? `g${j.idx}` : `mm${j.jogo}`;
+  if(j.fase==='grupos') return {ppm:false, ppv:false};
+  const invertido = JOGOS_INVERTIDOS.has(key);
+  const times = new Set([res.mandante, res.visitante].filter(Boolean));
+  if(invertido){
+    // Acertou PP se escreveu qualquer um dos dois times em qualquer posição
+    const ppm = times.has(j.mandante);
+    const ppv = times.has(j.visitante) && j.visitante!==j.mandante;
+    return {ppm, ppv};
+  }
+  return {
+    ppm: res.mandante && j.mandante===res.mandante,
+    ppv: res.visitante && j.visitante===res.visitante
+  };
+}
+
 function calcScoreFiltered(p, filterFn){
   let total=0,exatos=0,p40=0,p30=0,p10=0,p0=0,avaliados=0,bonus=0,bonusMataMata=0;
   const jogos = filterFn ? p.jogos.filter(filterFn) : p.jogos;
-  for(const j of jogos){const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;const res=results[key];if(!res||res.golsM===null||res.golsM===undefined||res.golsV===null||res.golsV===undefined)continue;if(j.golsM===null||j.golsV===null)continue;avaliados++;const pM=j.golsM,pV=j.golsV,rM=Number(res.golsM),rV=Number(res.golsV);if(pM===rM&&pV===rV){total+=PTS.EXATO;exatos++;}else{const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E',ok=rv===pv,aM=pM===rM,aV=pV===rV;if(ok&&(aM||aV)){total+=PTS.VENC_GOL;p40++;}else if(ok){total+=PTS.RESULTADO;p30++;}else if(aM||aV){total+=PTS.GOL_UM;p10++;}else{p0++;}}if(j.fase!=='grupos'){if(res.mandante&&j.mandante===res.mandante){total+=PTS.PP;bonus+=PTS.PP;bonusMataMata+=PTS.PP;}if(res.visitante&&j.visitante===res.visitante){total+=PTS.PP;bonus+=PTS.PP;bonusMataMata+=PTS.PP;}}}
+  for(const j of jogos){
+    const key=j.fase==='grupos'?`g${j.idx}`:`mm${j.jogo}`;
+    const res=results[key];
+    if(!res||res.golsM===null||res.golsM===undefined||res.golsV===null||res.golsV===undefined)continue;
+    if(j.golsM===null||j.golsV===null)continue;
+    avaliados++;
+    const pts = calcPtsJogo(j, res);
+    if(pts===50){total+=PTS.EXATO;exatos++;}
+    else if(pts===40){total+=PTS.VENC_GOL;p40++;}
+    else if(pts===30){total+=PTS.RESULTADO;p30++;}
+    else if(pts===10){total+=PTS.GOL_UM;p10++;}
+    else{p0++;}
+    if(j.fase!=='grupos'){
+      const {ppm,ppv}=calcPPJogo(j,res);
+      if(ppm){total+=PTS.PP;bonus+=PTS.PP;bonusMataMata+=PTS.PP;}
+      if(ppv){total+=PTS.PP;bonus+=PTS.PP;bonusMataMata+=PTS.PP;}
+    }
+  }
   // Bônus PP da fase de grupos (6.1) — só no cálculo geral (sem filtro de fase), pois depende da fase de grupos completa
   let bonusClassificacao = 0;
   if(!filterFn){
@@ -584,7 +640,11 @@ function calcScoreFiltered(p, filterFn){
   return{total,exatos,p40,p30,p10,p0,avaliados,bonus,bonusMataMata,bonusClassificacao,pctExatos:pct(exatos),pctP40:pct(p40),pctP30:pct(p30),pctP10:pct(p10),pctP0:pct(p0)};}
 function calcScore(p){ return calcScoreFiltered(p, null); }
 function calcScorePhase(p, filterFn){ return calcScoreFiltered(p, filterFn); }
-function getPts(j,key){const r=results[key];if(!r||r.golsM===null||r.golsM===undefined||r.golsV===null||r.golsV===undefined||j.golsM===null||j.golsV===null)return null;const pM=j.golsM,pV=j.golsV,rM=Number(r.golsM),rV=Number(r.golsV);if(pM===rM&&pV===rV)return 50;const rv=rM>rV?'M':rM<rV?'V':'E',pv=pM>pV?'M':pM<pV?'V':'E';if(rv===pv&&(pM===rM||pV===rV))return 40;if(rv===pv)return 30;if(pM===rM||pV===rV)return 10;return 0;}
+function getPts(j,key){
+  const res=results[key];
+  if(!res||res.golsM===null||res.golsM===undefined||res.golsV===null||res.golsV===undefined||j.golsM===null||j.golsV===null) return null;
+  return calcPtsJogo(j, res);
+}
 function renderParticipants(){const el=document.getElementById('participants-list');if(!participants.length){el.innerHTML='';return;}el.innerHTML=`<div style="margin-bottom:1rem;font-family:'Orbitron',monospace;font-size:0.7rem;letter-spacing:0.2em;color:var(--grey);text-transform:uppercase;">${participants.length} palpiteiro${participants.length!==1?'s':''} carregado${participants.length!==1?'s':''}</div><div class="participants-grid">${participants.map((p,i)=>`<div class="participant-card" onclick="openModal(${i})"><div class="pcard-avatar">${initials(p.nome)}</div><div style="flex:1"><div class="pcard-name">${p.nome}</div><div class="pcard-sub">${p.email||'sem e-mail'} · ${p.jogos.length} jogos</div></div><button class="pcard-remove" onclick="event.stopPropagation();removeP(${i})" title="Remover">✕</button></div>`).join('')}</div>`;document.getElementById('stat-p').textContent=participants.length;}
 function removeP(i){checkAdmin(()=>{participants.splice(i,1);save();renderParticipants();renderRanking();renderDashboard();showToast('Participante removido','info');});}
 function renderRanking(){const el=document.getElementById('ranking-content');if(!participants.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏆</div><div class="empty-text">Carregue as planilhas para ver o ranking</div></div>`;document.getElementById('stat-l').textContent='—';return;}const scored=participants.map((p,i)=>({...p,i,score:calcScore(p)})).sort((a,b)=>{
