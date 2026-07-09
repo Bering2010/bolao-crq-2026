@@ -68,7 +68,7 @@ main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:4rem 2re
 .podium-card:hover{transform:translateY(-4px);}
 .p1{width:280px;border-color:var(--gold);box-shadow:0 0 30px rgba(255,184,0,0.2),inset 0 0 40px rgba(255,184,0,0.03);}
 .p2,.p3{width:240px;}
-.p4{width:210px;}
+.p4{width:210px;padding:1.3rem 1rem;}
 .p2{border-color:rgba(192,192,192,0.4);}
 .p3{border-color:rgba(205,127,50,0.4);}
 .p4{border-color:rgba(0,212,255,0.3);}
@@ -78,7 +78,7 @@ main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:4rem 2re
 .p1 .podium-avatar{background:linear-gradient(135deg,var(--gold),#FF8C00);color:var(--navy);box-shadow:0 0 30px rgba(255,184,0,0.5);width:85px;height:85px;font-size:2.2rem;}
 .p2 .podium-avatar{background:linear-gradient(135deg,#C0C0C0,#888);color:var(--navy);}
 .p3 .podium-avatar{background:linear-gradient(135deg,#CD7F32,#8B4513);color:var(--navy);}
-.p4 .podium-avatar{background:linear-gradient(135deg,var(--cyan),#0077AA);color:var(--navy);width:60px;height:60px;font-size:1.5rem;}
+.p4 .podium-avatar{background:linear-gradient(135deg,var(--cyan),#0077AA);color:var(--navy);width:56px;height:56px;font-size:1.4rem;margin-bottom:0.7rem;}
 .podium-pos{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;font-family:'Orbitron',monospace;font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;}
 .p1 .podium-pos{background:var(--gold);color:var(--navy);}
 .p2 .podium-pos{background:#C0C0C0;color:var(--navy);}
@@ -89,6 +89,9 @@ main{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:4rem 2re
 .p1 .podium-score{font-size:2.8rem;color:var(--gold);filter:drop-shadow(0 0 10px rgba(255,184,0,0.4));}
 .p2 .podium-score,.p3 .podium-score{font-size:2.2rem;color:var(--white);}
 .p4 .podium-score{font-size:1.8rem;color:var(--white);}
+.p4 .podium-name{font-size:0.85rem;margin-bottom:0.5rem;}
+.p4 .podium-badges{gap:0.3rem;margin-top:0.6rem;}
+.p4 .badge{font-size:0.55rem;padding:0.15rem 0.4rem;}
 .podium-label{font-size:0.7rem;letter-spacing:0.15em;color:var(--grey);text-transform:uppercase;}
 .podium-badges{display:flex;gap:0.4rem;justify-content:center;margin-top:0.8rem;flex-wrap:wrap;}
 .badge{font-size:0.6rem;letter-spacing:0.06em;padding:0.2rem 0.5rem;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);color:var(--cyan);text-transform:uppercase;}
